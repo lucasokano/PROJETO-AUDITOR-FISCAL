@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Discipline {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(120)
+  slug         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  topics Topic[]
+
+  @@map("disciplines")
+}
+
+model Topic {
+  id           Int      @id @default(autoincrement())
+  disciplineId Int      @map("discipline_id")
+  name         String   @db.VarChar(160)
+  slug         String   @db.VarChar(160)
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  subtopics  Subtopic[]
+
+  @@unique([disciplineId, slug])
+  @@index([disciplineId])
+  @@map("topics")
+}
+
+model Subtopic {
+  id           Int      @id @default(autoincrement())
+  topicId      Int      @map("topic_id")
+  name         String   @db.VarChar(180)
+  slug         String   @db.VarChar(180)
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  topic      Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  statements Statement[]
+
+  @@unique([topicId, slug])
+  @@index([topicId])
+  @@map("subtopics")
+}
+
+model Statement {
+  id            Int      @id @default(autoincrement())
+  subtopicId    Int      @map("subtopic_id")
+  text          String
+  correctAnswer Boolean  @map("correct_answer")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@index([subtopicId])
+  @@map("statements")
+}

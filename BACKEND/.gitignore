@@ -24,3 +24,4 @@ Thumbs.db
 
 # Arquivos temporários
 *.tsbuildinfo
+/src/generated/prisma

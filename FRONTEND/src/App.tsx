@@ -11,7 +11,12 @@ function App() {
           <Route path="/" element={<Home />} />
 
           <Route
-            path="/disciplina/:disciplineId"
+            path="/disciplina/:disciplineId/topico/:topicId"
+            element={<Discipline />}
+          />
+
+          <Route
+            path="/disciplina/:disciplineId/topico/:topicId/subtopico/:subtopicId"
             element={<Discipline />}
           />
         </Route>

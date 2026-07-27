@@ -182,3 +182,41 @@
     border-right-color: var(--border);
   }
 }
+.answer-button {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  transition: .2s;
+}
+
+.answer-true {
+  background: #14532d;
+  color: #4ade80;
+}
+
+.answer-true:hover:not(:disabled) {
+  background: #166534;
+}
+
+.answer-false {
+  background: #5f2120;
+  color: #f87171;
+}
+
+.answer-false:hover:not(:disabled) {
+  background: #7f1d1d;
+}
+
+.answer-button:disabled {
+  opacity: .75;
+  cursor: default;
+}
