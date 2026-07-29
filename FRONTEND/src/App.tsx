@@ -1,5 +1,11 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+} from "react-router-dom";
+
 import { Layout } from "./components/Layout";
+import { AdminStatements } from "./pages/AdminStatements";
 import { Discipline } from "./pages/Discipline";
 import { Home } from "./pages/Home";
 
@@ -8,7 +14,15 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={<Home />}
+          />
+
+          <Route
+            path="/admin/statements"
+            element={<AdminStatements />}
+          />
 
           <Route
             path="/disciplina/:disciplineId/topico/:topicId"

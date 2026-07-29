@@ -1,4 +1,6 @@
 import type {
+  CreateStatementInput,
+  CreatedStatement,
   Discipline,
   Statement,
 } from "../types/study";
@@ -11,11 +13,25 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`);
+async function request<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<T> {
+  const response = await fetch(
+    `${API_URL}${path}`,
+    {
+      ...options,
+
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    },
+  );
 
   if (!response.ok) {
-    let message = "Não foi possível acessar a API.";
+    let message =
+      "Não foi possível acessar a API.";
 
     try {
       const body =
@@ -35,7 +51,9 @@ async function request<T>(path: string): Promise<T> {
 }
 
 export function getStudyStructure() {
-  return request<Discipline[]>("/study/structure");
+  return request<Discipline[]>(
+    "/study/structure",
+  );
 }
 
 export function getSubtopicStatements(
@@ -43,5 +61,17 @@ export function getSubtopicStatements(
 ) {
   return request<Statement[]>(
     `/study/subtopics/${subtopicId}/statements`,
+  );
+}
+
+export function createStatement(
+  input: CreateStatementInput,
+) {
+  return request<CreatedStatement>(
+    "/study/statements",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
   );
 }

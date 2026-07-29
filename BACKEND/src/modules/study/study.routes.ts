@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  createStudyStatement,
   listStudyStructure,
   listSubtopicStatements,
 } from "./study.controller.js";
@@ -15,4 +16,9 @@ studyRoutes.get(
 studyRoutes.get(
   "/subtopics/:subtopicId/statements",
   listSubtopicStatements,
+);
+
+studyRoutes.post(
+  "/statements",
+  createStudyStatement,
 );

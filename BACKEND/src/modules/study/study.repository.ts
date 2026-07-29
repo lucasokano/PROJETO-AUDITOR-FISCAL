@@ -85,3 +85,29 @@ export function findStatementsBySubtopicId(
     },
   });
 }
+interface CreateStatementData {
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
+
+export function createStatement(
+  data: CreateStatementData,
+) {
+  return prisma.statement.create({
+    data: {
+      subtopicId: data.subtopicId,
+      text: data.text,
+      correctAnswer: data.correctAnswer,
+    },
+
+    select: {
+      id: true,
+      subtopicId: true,
+      text: true,
+      correctAnswer: true,
+      isActive: true,
+      createdAt: true,
+    },
+  });
+}

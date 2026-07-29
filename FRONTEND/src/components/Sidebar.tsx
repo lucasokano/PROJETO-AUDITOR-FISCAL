@@ -1,3 +1,5 @@
+import { Settings } from "lucide-react";
+
 import {
   ChevronDown,
   ChevronRight,
@@ -124,7 +126,23 @@ export function Sidebar({
 
           <span>Página inicial</span>
         </button>
+<button
+  type="button"
+  className={`sidebar-home-button ${
+    location.pathname.startsWith(
+      "/admin",
+    )
+      ? "sidebar-item-active"
+      : ""
+  }`}
+  onClick={() =>
+    navigate("/admin/statements")
+  }
+>
+  <Settings size={18} />
 
+  <span>Administração</span>
+</button>
         {isLoading && (
           <div className="sidebar-status">
             Carregando disciplinas...

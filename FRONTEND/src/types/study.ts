@@ -23,3 +23,15 @@ export interface Statement {
   text: string;
   correctAnswer: boolean;
 }
+export interface CreateStatementInput {
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
+
+export interface CreatedStatement
+  extends Statement {
+  subtopicId: number;
+  isActive: boolean;
+  createdAt: string;
+}
