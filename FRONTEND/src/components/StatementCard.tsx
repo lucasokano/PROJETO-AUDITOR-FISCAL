@@ -11,7 +11,9 @@ export function StatementCard({
 }: StatementCardProps) {
   return (
     <article className="statement-row">
-      <div className="statement-text">{text}</div>
+      <div className="statement-text">
+        {text}
+      </div>
 
       <div className="statement-answer-cell">
         <button

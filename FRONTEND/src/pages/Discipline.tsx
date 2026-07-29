@@ -1,140 +1,190 @@
-import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { StatementCard } from "../components/StatementCard";
 import {
-  findDiscipline,
-  findTopic,
-} from "../data/studyStructure";
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-interface Statement {
-  id: number;
-  text: string;
-  correctAnswer: boolean;
-  subtopicId: string;
-}
+import { useParams } from "react-router-dom";
+
+import { StatementCard } from "../components/StatementCard";
+import { useStudy } from "../contexts/StudyContext";
+import { getSubtopicStatements } from "../services/studyApi";
+
+import type { Statement } from "../types/study";
 
 interface AnswerResult {
   statementId: number;
   isCorrect: boolean;
 }
 
-const statements: Statement[] = [
-  {
-    id: 1,
-    text: "O modelo OSI possui sete camadas.",
-    correctAnswer: true,
-    subtopicId: "modelo-osi",
-  },
-  {
-    id: 2,
-    text: "A camada de transporte é responsável pelo endereçamento IP.",
-    correctAnswer: false,
-    subtopicId: "modelo-osi",
-  },
-  {
-    id: 3,
-    text: "O TCP é um protocolo orientado à conexão.",
-    correctAnswer: true,
-    subtopicId: "tcp-ip",
-  },
-  {
-    id: 4,
-    text: "O UDP garante a entrega de todos os pacotes.",
-    correctAnswer: false,
-    subtopicId: "tcp-ip",
-  },
-  {
-    id: 5,
-    text: "O DNS converte nomes de domínio em endereços IP.",
-    correctAnswer: true,
-    subtopicId: "dns",
-  },
-  {
-    id: 6,
-    text: "Uma chave primária pode identificar registros de forma única.",
-    correctAnswer: true,
-    subtopicId: "modelo-relacional",
-  },
-  {
-    id: 7,
-    text: "A normalização busca reduzir redundâncias nos dados.",
-    correctAnswer: true,
-    subtopicId: "normalizacao",
-  },
-];
-
 export function Discipline() {
-  const { disciplineId, topicId, subtopicId } = useParams();
+  const {
+    disciplineId,
+    topicId,
+    subtopicId,
+  } = useParams();
 
-  const [answers, setAnswers] = useState<AnswerResult[]>([]);
+  const {
+    findDiscipline,
+    findTopic,
+    findSubtopic,
+    isLoading: isStructureLoading,
+    error: structureError,
+  } = useStudy();
 
-  const discipline = findDiscipline(disciplineId);
-  const topic = findTopic(disciplineId, topicId);
+  const discipline =
+    findDiscipline(disciplineId);
 
-  const subtopic = topic?.subtopics.find(
-    (item) => item.id === subtopicId,
+  const topic = findTopic(
+    disciplineId,
+    topicId,
   );
 
-  const currentStatements = useMemo(
+  const subtopic = findSubtopic(
+    disciplineId,
+    topicId,
+    subtopicId,
+  );
+
+  const [statements, setStatements] =
+    useState<Statement[]>([]);
+
+  const [answers, setAnswers] =
+    useState<AnswerResult[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(false);
+
+  const [error, setError] = useState<
+    string | null
+  >(null);
+
+useEffect(() => {
+  setAnswers([]);
+  setStatements([]);
+  setError(null);
+
+  if (!subtopic) {
+    setIsLoading(false);
+    return;
+  }
+
+  const currentSubtopicId = subtopic.id;
+  let cancelled = false;
+
+  async function loadStatements() {
+    try {
+      setIsLoading(true);
+
+      const result = await getSubtopicStatements(
+        currentSubtopicId,
+      );
+
+      if (!cancelled) {
+        setStatements(result);
+      }
+    } catch (requestError) {
+      if (!cancelled) {
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Erro ao carregar afirmações.";
+
+        setError(message);
+        setStatements([]);
+      }
+    } finally {
+      if (!cancelled) {
+        setIsLoading(false);
+      }
+    }
+  }
+
+  void loadStatements();
+
+  return () => {
+    cancelled = true;
+  };
+}, [subtopic]);
+
+  const answeredIds = useMemo(
+    () =>
+      new Set(
+        answers.map(
+          (answer) => answer.statementId,
+        ),
+      ),
+    [answers],
+  );
+
+  const unansweredStatements = useMemo(
     () =>
       statements.filter(
-        (statement) => statement.subtopicId === subtopicId,
+        (statement) =>
+          !answeredIds.has(statement.id),
       ),
-    [subtopicId],
+    [answeredIds, statements],
   );
 
-  const currentStatementIds = useMemo(
-    () => new Set(currentStatements.map((statement) => statement.id)),
-    [currentStatements],
-  );
+  const total = statements.length;
+  const answered = answers.length;
 
-  const currentAnswers = answers.filter((answer) =>
-    currentStatementIds.has(answer.statementId),
-  );
-
-  const unansweredStatements = currentStatements.filter(
-    (statement) =>
-      !currentAnswers.some(
-        (answer) => answer.statementId === statement.id,
-      ),
-  );
-
-  const total = currentStatements.length;
-  const answered = currentAnswers.length;
-  const correct = currentAnswers.filter(
+  const correct = answers.filter(
     (answer) => answer.isCorrect,
   ).length;
+
   const incorrect = answered - correct;
 
   const percentage =
-    total > 0 ? Math.round((correct / total) * 100) : 0;
+    total > 0
+      ? Math.round((correct / total) * 100)
+      : 0;
 
   function handleAnswer(
-    statementId: number,
+    statement: Statement,
     selectedAnswer: boolean,
   ) {
-    const statement = currentStatements.find(
-      (item) => item.id === statementId,
-    );
+    setAnswers((current) => {
+      const alreadyAnswered = current.some(
+        (answer) =>
+          answer.statementId ===
+          statement.id,
+      );
 
-    if (!statement) {
-      return;
-    }
+      if (alreadyAnswered) {
+        return current;
+      }
 
-    setAnswers((current) => [
-      ...current,
-      {
-        statementId,
-        isCorrect: selectedAnswer === statement.correctAnswer,
-      },
-    ]);
+      return [
+        ...current,
+        {
+          statementId: statement.id,
+          isCorrect:
+            selectedAnswer ===
+            statement.correctAnswer,
+        },
+      ];
+    });
   }
 
-  function handleRestart() {
-    setAnswers((current) =>
-      current.filter(
-        (answer) => !currentStatementIds.has(answer.statementId),
-      ),
+  function restartSubtopic() {
+    setAnswers([]);
+  }
+
+  if (isStructureLoading) {
+    return (
+      <section className="page">
+        <h2>Carregando conteúdo...</h2>
+      </section>
+    );
+  }
+
+  if (structureError) {
+    return (
+      <section className="page">
+        <h2>Erro ao carregar conteúdo</h2>
+        <p>{structureError}</p>
+      </section>
     );
   }
 
@@ -173,45 +223,77 @@ export function Discipline() {
             </div>
 
             <div className="statement-list">
-              {unansweredStatements.map((statement) => (
-                <StatementCard
-                  key={statement.id}
-                  text={statement.text}
-                  onAnswer={(answer) =>
-                    handleAnswer(statement.id, answer)
-                  }
-                />
-              ))}
-
               {!subtopic && (
                 <div className="empty-statements">
-                  Selecione um subtópico no menu lateral.
+                  Selecione um subtópico.
                 </div>
               )}
 
-              {subtopic && total === 0 && (
+              {isLoading && (
                 <div className="empty-statements">
-                  Nenhuma afirmação cadastrada neste subtópico.
+                  Carregando afirmações...
                 </div>
               )}
 
-              {total > 0 && unansweredStatements.length === 0 && (
-                <div className="statements-finished">
-                  <h3>Subtópico concluído</h3>
-
-                  <p>
-                    Você respondeu todas as afirmações deste subtópico.
-                  </p>
-
-                  <button
-                    type="button"
-                    className="restart-button"
-                    onClick={handleRestart}
-                  >
-                    Responder novamente
-                  </button>
+              {error && (
+                <div className="empty-statements">
+                  {error}
                 </div>
               )}
+
+              {!isLoading &&
+                !error &&
+                subtopic &&
+                total === 0 && (
+                  <div className="empty-statements">
+                    Nenhuma afirmação cadastrada
+                    neste subtópico.
+                  </div>
+                )}
+
+              {!isLoading &&
+                !error &&
+                unansweredStatements.map(
+                  (statement) => (
+                    <StatementCard
+                      key={statement.id}
+                      text={statement.text}
+                      onAnswer={(answer) =>
+                        handleAnswer(
+                          statement,
+                          answer,
+                        )
+                      }
+                    />
+                  ),
+                )}
+
+              {!isLoading &&
+                !error &&
+                total > 0 &&
+                unansweredStatements.length ===
+                  0 && (
+                  <div className="statements-finished">
+                    <h3>
+                      Subtópico concluído
+                    </h3>
+
+                    <p>
+                      Você respondeu todas as
+                      afirmações deste subtópico.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="restart-button"
+                      onClick={
+                        restartSubtopic
+                      }
+                    >
+                      Responder novamente
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
         </div>
@@ -247,7 +329,9 @@ export function Discipline() {
           <div className="performance-progress">
             <div
               className="performance-progress-bar"
-              style={{ width: `${percentage}%` }}
+              style={{
+                width: `${percentage}%`,
+              }}
             />
           </div>
 
@@ -255,7 +339,7 @@ export function Discipline() {
             <button
               type="button"
               className="restart-button"
-              onClick={handleRestart}
+              onClick={restartSubtopic}
             >
               Reiniciar subtópico
             </button>

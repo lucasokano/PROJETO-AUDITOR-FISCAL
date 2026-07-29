@@ -1,147 +1,230 @@
-import { ChevronDown, ChevronRight, Home } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { studyStructure } from "../data/studyStructure";
+import {
+  ChevronDown,
+  ChevronRight,
+  Home,
+} from "lucide-react";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
+import { useStudy } from "../contexts/StudyContext";
 
 interface SidebarProps {
   isOpen: boolean;
 }
 
-export function Sidebar({ isOpen }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+}: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [openDisciplines, setOpenDisciplines] = useState<Set<string>>(
-    new Set(),
-  );
+  const {
+    disciplines,
+    isLoading,
+    error,
+    reloadStructure,
+  } = useStudy();
 
-  const pathParts = location.pathname.split("/").filter(Boolean);
+  const [openDisciplines, setOpenDisciplines] =
+    useState<Set<string>>(new Set());
 
-  const currentDisciplineId =
-    pathParts[0] === "disciplina" ? pathParts[1] : undefined;
+  const pathParts = location.pathname
+    .split("/")
+    .filter(Boolean);
 
-  const currentTopicId =
-    pathParts[2] === "topico" ? pathParts[3] : undefined;
+  const currentDisciplineSlug =
+    pathParts[0] === "disciplina"
+      ? pathParts[1]
+      : undefined;
+
+  const currentTopicSlug =
+    pathParts[2] === "topico"
+      ? pathParts[3]
+      : undefined;
 
   useEffect(() => {
-    if (!currentDisciplineId) {
+    if (!currentDisciplineSlug) {
       return;
     }
 
     setOpenDisciplines((current) => {
       const updated = new Set(current);
-      updated.add(currentDisciplineId);
+
+      updated.add(currentDisciplineSlug);
+
       return updated;
     });
-  }, [currentDisciplineId]);
+  }, [currentDisciplineSlug]);
 
-  function toggleDiscipline(disciplineId: string) {
+  function toggleDiscipline(
+    disciplineSlug: string,
+  ) {
     setOpenDisciplines((current) => {
       const updated = new Set(current);
 
-      if (updated.has(disciplineId)) {
-        updated.delete(disciplineId);
+      if (updated.has(disciplineSlug)) {
+        updated.delete(disciplineSlug);
       } else {
-        updated.add(disciplineId);
+        updated.add(disciplineSlug);
       }
 
       return updated;
     });
   }
 
-  function handleTopicClick(
-    disciplineId: string,
-    topicId: string,
-    firstSubtopicId?: string,
+  function openTopic(
+    disciplineSlug: string,
+    topicSlug: string,
+    firstSubtopicSlug?: string,
   ) {
-    if (firstSubtopicId) {
+    if (firstSubtopicSlug) {
       navigate(
-        `/disciplina/${disciplineId}/topico/${topicId}/subtopico/${firstSubtopicId}`,
+        `/disciplina/${disciplineSlug}/topico/${topicSlug}/subtopico/${firstSubtopicSlug}`,
       );
 
       return;
     }
 
-    navigate(`/disciplina/${disciplineId}/topico/${topicId}`);
+    navigate(
+      `/disciplina/${disciplineSlug}/topico/${topicSlug}`,
+    );
   }
 
   return (
     <aside
       className={`sidebar ${
-        isOpen ? "sidebar-open" : "sidebar-closed"
+        isOpen
+          ? "sidebar-open"
+          : "sidebar-closed"
       }`}
     >
-      <h2 className="sidebar-title">Sistema de Estudos</h2>
+      <h2 className="sidebar-title">
+        Sistema de Estudos
+      </h2>
 
       <nav className="sidebar-navigation">
         <button
           type="button"
           className={`sidebar-home-button ${
-            location.pathname === "/" ? "sidebar-item-active" : ""
+            location.pathname === "/"
+              ? "sidebar-item-active"
+              : ""
           }`}
           onClick={() => navigate("/")}
         >
           <Home size={18} />
+
           <span>Página inicial</span>
         </button>
 
-        {studyStructure.map((discipline) => {
-          const isExpanded = openDisciplines.has(discipline.id);
-          const isCurrentDiscipline =
-            currentDisciplineId === discipline.id;
+        {isLoading && (
+          <div className="sidebar-status">
+            Carregando disciplinas...
+          </div>
+        )}
 
-          return (
-            <div
-              className="discipline-navigation"
-              key={discipline.id}
+        {error && (
+          <div className="sidebar-error">
+            <span>{error}</span>
+
+            <button
+              type="button"
+              onClick={() =>
+                void reloadStructure()
+              }
             >
-              <button
-                type="button"
-                className={`discipline-button ${
-                  isCurrentDiscipline ? "discipline-button-active" : ""
-                }`}
-                onClick={() => toggleDiscipline(discipline.id)}
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {!isLoading &&
+          !error &&
+          disciplines.map((discipline) => {
+            const isExpanded =
+              openDisciplines.has(
+                discipline.slug,
+              );
+
+            const isCurrentDiscipline =
+              currentDisciplineSlug ===
+              discipline.slug;
+
+            return (
+              <div
+                key={discipline.id}
+                className="discipline-navigation"
               >
-                <span>{discipline.name}</span>
+                <button
+                  type="button"
+                  className={`discipline-button ${
+                    isCurrentDiscipline
+                      ? "discipline-button-active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    toggleDiscipline(
+                      discipline.slug,
+                    )
+                  }
+                >
+                  <span>
+                    {discipline.name}
+                  </span>
 
-                {isExpanded ? (
-                  <ChevronDown size={18} />
-                ) : (
-                  <ChevronRight size={18} />
+                  {isExpanded ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </button>
+
+                {isExpanded && (
+                  <div className="topics-list">
+                    {discipline.topics.map(
+                      (topic) => {
+                        const isCurrentTopic =
+                          isCurrentDiscipline &&
+                          currentTopicSlug ===
+                            topic.slug;
+
+                        return (
+                          <button
+                            type="button"
+                            key={topic.id}
+                            className={`topic-button ${
+                              isCurrentTopic
+                                ? "topic-button-active"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              openTopic(
+                                discipline.slug,
+                                topic.slug,
+                                topic
+                                  .subtopics[0]
+                                  ?.slug,
+                              )
+                            }
+                          >
+                            {topic.name}
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
                 )}
-              </button>
-
-              {isExpanded && (
-                <div className="topics-list">
-                  {discipline.topics.map((topic) => {
-                    const isCurrentTopic =
-                      isCurrentDiscipline &&
-                      currentTopicId === topic.id;
-
-                    return (
-                      <button
-                        type="button"
-                        key={topic.id}
-                        className={`topic-button ${
-                          isCurrentTopic ? "topic-button-active" : ""
-                        }`}
-                        onClick={() =>
-                          handleTopicClick(
-                            discipline.id,
-                            topic.id,
-                            topic.subtopics[0]?.id,
-                          )
-                        }
-                      >
-                        {topic.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
       </nav>
     </aside>
   );

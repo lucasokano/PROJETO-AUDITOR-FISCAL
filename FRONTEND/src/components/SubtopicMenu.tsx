@@ -1,35 +1,67 @@
 import { BookOpen } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+
 import {
-  findDiscipline,
-  findTopic,
-} from "../data/studyStructure";
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
+import { useStudy } from "../contexts/StudyContext";
 
 export function SubtopicMenu() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const pathParts = location.pathname.split("/").filter(Boolean);
+  const {
+    findDiscipline,
+    findTopic,
+    isLoading,
+  } = useStudy();
 
-  const disciplineId =
-    pathParts[0] === "disciplina" ? pathParts[1] : undefined;
+  const pathParts = location.pathname
+    .split("/")
+    .filter(Boolean);
 
-  const topicId =
-    pathParts[2] === "topico" ? pathParts[3] : undefined;
+  const disciplineSlug =
+    pathParts[0] === "disciplina"
+      ? pathParts[1]
+      : undefined;
 
-  const subtopicId =
-    pathParts[4] === "subtopico" ? pathParts[5] : undefined;
+  const topicSlug =
+    pathParts[2] === "topico"
+      ? pathParts[3]
+      : undefined;
 
-  const discipline = findDiscipline(disciplineId);
-  const topic = findTopic(disciplineId, topicId);
+  const subtopicSlug =
+    pathParts[4] === "subtopico"
+      ? pathParts[5]
+      : undefined;
 
-  if (!discipline || !topic || !disciplineId || !topicId) {
+  if (isLoading) {
     return null;
   }
 
-  function handleSubtopicClick(selectedSubtopicId: string) {
+  const discipline =
+    findDiscipline(disciplineSlug);
+
+  const topic = findTopic(
+    disciplineSlug,
+    topicSlug,
+  );
+
+  if (
+    !discipline ||
+    !topic ||
+    !disciplineSlug ||
+    !topicSlug
+  ) {
+    return null;
+  }
+
+  function openSubtopic(
+    selectedSubtopicSlug: string,
+  ) {
     navigate(
-      `/disciplina/${disciplineId}/topico/${topicId}/subtopico/${selectedSubtopicId}`,
+      `/disciplina/${disciplineSlug}/topico/${topicSlug}/subtopico/${selectedSubtopicSlug}`,
     );
   }
 
@@ -53,11 +85,13 @@ export function SubtopicMenu() {
             type="button"
             key={subtopic.id}
             className={`subtopic-button ${
-              subtopicId === subtopic.id
+              subtopicSlug === subtopic.slug
                 ? "subtopic-button-active"
                 : ""
             }`}
-            onClick={() => handleSubtopicClick(subtopic.id)}
+            onClick={() =>
+              openSubtopic(subtopic.slug)
+            }
           >
             {subtopic.name}
           </button>
