@@ -35,3 +35,17 @@ export interface CreatedStatement
   isActive: boolean;
   createdAt: string;
 }
+
+export interface CreateDisciplineInput {
+  name: string;
+}
+
+export interface CreateTopicInput {
+  disciplineId: number;
+  name: string;
+}
+
+export interface CreateSubtopicInput {
+  topicId: number;
+  name: string;
+}

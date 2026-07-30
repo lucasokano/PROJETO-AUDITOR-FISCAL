@@ -1,7 +1,10 @@
 import { Router } from "express";
 
 import {
+  createStudyDiscipline,
   createStudyStatement,
+  createStudySubtopic,
+  createStudyTopic,
   listStudyStructure,
   listSubtopicStatements,
 } from "./study.controller.js";
@@ -21,4 +24,19 @@ studyRoutes.get(
 studyRoutes.post(
   "/statements",
   createStudyStatement,
+);
+
+studyRoutes.post(
+  "/disciplines",
+  createStudyDiscipline,
+);
+
+studyRoutes.post(
+  "/topics",
+  createStudyTopic,
+);
+
+studyRoutes.post(
+  "/subtopics",
+  createStudySubtopic,
 );

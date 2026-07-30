@@ -4,10 +4,27 @@ import type {
 } from "express";
 
 import {
+  addDiscipline,
   addStatement,
+  addSubtopic,
+  addTopic,
   getStudyStructure,
   getSubtopicStatements,
 } from "./study.service.js";
+
+interface CreateDisciplineBody {
+  name?: unknown;
+}
+
+interface CreateTopicBody {
+  disciplineId?: unknown;
+  name?: unknown;
+}
+
+interface CreateSubtopicBody {
+  topicId?: unknown;
+  name?: unknown;
+}
 
 interface SubtopicRouteParams {
   subtopicId: string;
@@ -121,4 +138,110 @@ export async function createStudyStatement(
   });
 
   response.status(201).json(statement);
+}
+
+export async function createStudyDiscipline(
+  request: Request<
+    Record<string, never>,
+    unknown,
+    CreateDisciplineBody
+  >,
+  response: Response,
+) {
+  const { name } = request.body;
+
+  if (typeof name !== "string") {
+    response.status(400).json({
+      message:
+        "O nome da disciplina é obrigatório.",
+    });
+
+    return;
+  }
+
+  const discipline = await addDiscipline({
+    name,
+  });
+
+  response.status(201).json(discipline);
+}
+
+export async function createStudyTopic(
+  request: Request<
+    Record<string, never>,
+    unknown,
+    CreateTopicBody
+  >,
+  response: Response,
+) {
+  const { disciplineId, name } =
+    request.body;
+
+  if (
+    typeof disciplineId !== "number" ||
+    !Number.isInteger(disciplineId) ||
+    disciplineId <= 0
+  ) {
+    response.status(400).json({
+      message:
+        "O ID da disciplina é inválido.",
+    });
+
+    return;
+  }
+
+  if (typeof name !== "string") {
+    response.status(400).json({
+      message:
+        "O nome do tópico é obrigatório.",
+    });
+
+    return;
+  }
+
+  const topic = await addTopic({
+    disciplineId,
+    name,
+  });
+
+  response.status(201).json(topic);
+}
+
+export async function createStudySubtopic(
+  request: Request<
+    Record<string, never>,
+    unknown,
+    CreateSubtopicBody
+  >,
+  response: Response,
+) {
+  const { topicId, name } = request.body;
+
+  if (
+    typeof topicId !== "number" ||
+    !Number.isInteger(topicId) ||
+    topicId <= 0
+  ) {
+    response.status(400).json({
+      message: "O ID do tópico é inválido.",
+    });
+
+    return;
+  }
+
+  if (typeof name !== "string") {
+    response.status(400).json({
+      message:
+        "O nome do subtópico é obrigatório.",
+    });
+
+    return;
+  }
+
+  const subtopic = await addSubtopic({
+    topicId,
+    name,
+  });
+
+  response.status(201).json(subtopic);
 }

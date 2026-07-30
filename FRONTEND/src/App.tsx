@@ -6,6 +6,7 @@ import {
 
 import { Layout } from "./components/Layout";
 import { AdminStatements } from "./pages/AdminStatements";
+import { AdminStructure } from "./pages/AdminStructure";
 import { Discipline } from "./pages/Discipline";
 import { Home } from "./pages/Home";
 
@@ -23,6 +24,11 @@ function App() {
             path="/admin/statements"
             element={<AdminStatements />}
           />
+
+          <Route
+  path="/admin/structure"
+  element={<AdminStructure />}
+/>
 
           <Route
             path="/disciplina/:disciplineId/topico/:topicId"

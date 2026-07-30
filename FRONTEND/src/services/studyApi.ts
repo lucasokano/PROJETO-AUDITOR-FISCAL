@@ -1,8 +1,13 @@
 import type {
+  CreateDisciplineInput,
   CreateStatementInput,
+  CreateSubtopicInput,
+  CreateTopicInput,
   CreatedStatement,
   Discipline,
   Statement,
+  Subtopic,
+  Topic,
 } from "../types/study";
 
 const API_URL =
@@ -11,6 +16,26 @@ const API_URL =
 
 interface ApiErrorResponse {
   message?: string;
+}
+
+export interface CreatedDiscipline {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface CreatedTopic {
+  id: number;
+  disciplineId: number;
+  name: string;
+  slug: string;
+}
+
+export interface CreatedSubtopic {
+  id: number;
+  topicId: number;
+  name: string;
+  slug: string;
 }
 
 async function request<T>(
@@ -69,6 +94,42 @@ export function createStatement(
 ) {
   return request<CreatedStatement>(
     "/study/statements",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function createDiscipline(
+  input: CreateDisciplineInput,
+) {
+  return request<CreatedDiscipline>(
+    "/study/disciplines",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function createTopic(
+  input: CreateTopicInput,
+) {
+  return request<CreatedTopic>(
+    "/study/topics",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function createSubtopic(
+  input: CreateSubtopicInput,
+) {
+  return request<CreatedSubtopic>(
+    "/study/subtopics",
     {
       method: "POST",
       body: JSON.stringify(input),

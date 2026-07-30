@@ -1,9 +1,9 @@
-import { Settings } from "lucide-react";
-
 import {
+  BookOpenCheck,
   ChevronDown,
   ChevronRight,
   Home,
+  ListPlus,
 } from "lucide-react";
 
 import {
@@ -126,23 +126,41 @@ export function Sidebar({
 
           <span>Página inicial</span>
         </button>
-<button
-  type="button"
-  className={`sidebar-home-button ${
-    location.pathname.startsWith(
-      "/admin",
-    )
-      ? "sidebar-item-active"
-      : ""
-  }`}
-  onClick={() =>
-    navigate("/admin/statements")
-  }
->
-  <Settings size={18} />
 
-  <span>Administração</span>
-</button>
+        <button
+          type="button"
+          className={`sidebar-home-button ${
+            location.pathname ===
+            "/admin/structure"
+              ? "sidebar-item-active"
+              : ""
+          }`}
+          onClick={() =>
+            navigate("/admin/structure")
+          }
+        >
+          <BookOpenCheck size={18} />
+
+          <span>Editar disciplinas</span>
+        </button>
+
+        <button
+          type="button"
+          className={`sidebar-home-button ${
+            location.pathname ===
+            "/admin/statements"
+              ? "sidebar-item-active"
+              : ""
+          }`}
+          onClick={() =>
+            navigate("/admin/statements")
+          }
+        >
+          <ListPlus size={18} />
+
+          <span>Adicionar questões</span>
+        </button>
+
         {isLoading && (
           <div className="sidebar-status">
             Carregando disciplinas...
