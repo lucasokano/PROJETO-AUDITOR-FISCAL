@@ -1,116 +1,5 @@
 import { prisma } from "../../config/prisma.js";
 
-export function findStudyStructure() {
-  return prisma.discipline.findMany({
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-
-      topics: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-
-          subtopics: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-
-            orderBy: [
-              {
-                displayOrder: "asc",
-              },
-              {
-                name: "asc",
-              },
-            ],
-          },
-        },
-
-        orderBy: [
-          {
-            displayOrder: "asc",
-          },
-          {
-            name: "asc",
-          },
-        ],
-      },
-    },
-
-    orderBy: [
-      {
-        displayOrder: "asc",
-      },
-      {
-        name: "asc",
-      },
-    ],
-  });
-}
-
-export function findSubtopicById(subtopicId: number) {
-  return prisma.subtopic.findUnique({
-    where: {
-      id: subtopicId,
-    },
-
-    select: {
-      id: true,
-    },
-  });
-}
-
-export function findStatementsBySubtopicId(
-  subtopicId: number,
-) {
-  return prisma.statement.findMany({
-    where: {
-      subtopicId,
-      isActive: true,
-    },
-
-    select: {
-      id: true,
-      text: true,
-      correctAnswer: true,
-    },
-
-    orderBy: {
-      id: "asc",
-    },
-  });
-}
-interface CreateStatementData {
-  subtopicId: number;
-  text: string;
-  correctAnswer: boolean;
-}
-
-export function createStatement(
-  data: CreateStatementData,
-) {
-  return prisma.statement.create({
-    data: {
-      subtopicId: data.subtopicId,
-      text: data.text,
-      correctAnswer: data.correctAnswer,
-    },
-
-    select: {
-      id: true,
-      subtopicId: true,
-      text: true,
-      correctAnswer: true,
-      isActive: true,
-      createdAt: true,
-    },
-  });
-}
 interface CreateDisciplineData {
   name: string;
   slug: string;
@@ -126,6 +15,83 @@ interface CreateSubtopicData {
   topicId: number;
   name: string;
   slug: string;
+}
+
+interface CreateStatementData {
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
+
+export function findStudyStructure() {
+  return prisma.discipline.findMany({
+    orderBy: [
+      {
+        displayOrder: "asc",
+      },
+      {
+        name: "asc",
+      },
+    ],
+    include: {
+      topics: {
+        orderBy: [
+          {
+            displayOrder: "asc",
+          },
+          {
+            name: "asc",
+          },
+        ],
+        include: {
+          subtopics: {
+            orderBy: [
+              {
+                displayOrder: "asc",
+              },
+              {
+                name: "asc",
+              },
+            ],
+          },
+        },
+      },
+    },
+  });
+}
+
+export function findStatementsBySubtopicId(
+  subtopicId: number,
+) {
+  return prisma.statement.findMany({
+    where: {
+      subtopicId,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
+}
+
+export function findSubtopicById(
+  subtopicId: number,
+) {
+  return prisma.subtopic.findUnique({
+    where: {
+      id: subtopicId,
+    },
+    select: {
+      id: true,
+    },
+  });
+}
+
+export function createStatement(
+  data: CreateStatementData,
+) {
+  return prisma.statement.create({
+    data,
+  });
 }
 
 export function findDisciplineById(
@@ -247,6 +213,152 @@ export function createSubtopic(
       topicId: true,
       name: true,
       slug: true,
+    },
+  });
+}
+
+export function findDisciplineDetailsById(
+  disciplineId: number,
+) {
+  return prisma.discipline.findUnique({
+    where: {
+      id: disciplineId,
+    },
+    select: {
+      id: true,
+      _count: {
+        select: {
+          topics: true,
+        },
+      },
+    },
+  });
+}
+
+export function findTopicDetailsById(
+  topicId: number,
+) {
+  return prisma.topic.findUnique({
+    where: {
+      id: topicId,
+    },
+    select: {
+      id: true,
+      disciplineId: true,
+      _count: {
+        select: {
+          subtopics: true,
+        },
+      },
+    },
+  });
+}
+
+export function findSubtopicDetailsById(
+  subtopicId: number,
+) {
+  return prisma.subtopic.findUnique({
+    where: {
+      id: subtopicId,
+    },
+    select: {
+      id: true,
+      topicId: true,
+      _count: {
+        select: {
+          statements: true,
+        },
+      },
+    },
+  });
+}
+
+export function updateDiscipline(
+  disciplineId: number,
+  data: {
+    name: string;
+    slug: string;
+  },
+) {
+  return prisma.discipline.update({
+    where: {
+      id: disciplineId,
+    },
+    data,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  });
+}
+
+export function updateTopic(
+  topicId: number,
+  data: {
+    name: string;
+    slug: string;
+  },
+) {
+  return prisma.topic.update({
+    where: {
+      id: topicId,
+    },
+    data,
+    select: {
+      id: true,
+      disciplineId: true,
+      name: true,
+      slug: true,
+    },
+  });
+}
+
+export function updateSubtopic(
+  subtopicId: number,
+  data: {
+    name: string;
+    slug: string;
+  },
+) {
+  return prisma.subtopic.update({
+    where: {
+      id: subtopicId,
+    },
+    data,
+    select: {
+      id: true,
+      topicId: true,
+      name: true,
+      slug: true,
+    },
+  });
+}
+
+export function deleteDiscipline(
+  disciplineId: number,
+) {
+  return prisma.discipline.delete({
+    where: {
+      id: disciplineId,
+    },
+  });
+}
+
+export function deleteTopic(topicId: number) {
+  return prisma.topic.delete({
+    where: {
+      id: topicId,
+    },
+  });
+}
+
+export function deleteSubtopic(
+  subtopicId: number,
+) {
+  return prisma.subtopic.delete({
+    where: {
+      id: subtopicId,
     },
   });
 }

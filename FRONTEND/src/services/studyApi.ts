@@ -3,40 +3,40 @@ import type {
   CreateStatementInput,
   CreateSubtopicInput,
   CreateTopicInput,
-  CreatedStatement,
   Discipline,
   Statement,
-  Subtopic,
-  Topic,
 } from "../types/study";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ??
-  "http://localhost:3001/api";
-
-interface ApiErrorResponse {
-  message?: string;
-}
-
-export interface CreatedDiscipline {
+interface DisciplineResponse {
   id: number;
   name: string;
   slug: string;
 }
 
-export interface CreatedTopic {
+interface TopicResponse {
   id: number;
   disciplineId: number;
   name: string;
   slug: string;
 }
 
-export interface CreatedSubtopic {
+interface SubtopicResponse {
   id: number;
   topicId: number;
   name: string;
   slug: string;
 }
+
+interface StatementResponse {
+  id: number;
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
+
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  "http://localhost:3001/api";
 
 async function request<T>(
   path: string,
@@ -46,7 +46,6 @@ async function request<T>(
     `${API_URL}${path}`,
     {
       ...options,
-
       headers: {
         "Content-Type": "application/json",
         ...options?.headers,
@@ -55,21 +54,18 @@ async function request<T>(
   );
 
   if (!response.ok) {
-    let message =
-      "Não foi possível acessar a API.";
+    const data = await response
+      .json()
+      .catch(() => null);
 
-    try {
-      const body =
-        (await response.json()) as ApiErrorResponse;
+    throw new Error(
+      data?.message ??
+        "Erro ao comunicar com o servidor.",
+    );
+  }
 
-      if (body.message) {
-        message = body.message;
-      }
-    } catch {
-      // Mantém a mensagem padrão.
-    }
-
-    throw new Error(message);
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
@@ -81,7 +77,7 @@ export function getStudyStructure() {
   );
 }
 
-export function getSubtopicStatements(
+export function getStatementsBySubtopic(
   subtopicId: number,
 ) {
   return request<Statement[]>(
@@ -89,10 +85,13 @@ export function getSubtopicStatements(
   );
 }
 
+export const getSubtopicStatements =
+  getStatementsBySubtopic;
+
 export function createStatement(
   input: CreateStatementInput,
 ) {
-  return request<CreatedStatement>(
+  return request<StatementResponse>(
     "/study/statements",
     {
       method: "POST",
@@ -104,7 +103,7 @@ export function createStatement(
 export function createDiscipline(
   input: CreateDisciplineInput,
 ) {
-  return request<CreatedDiscipline>(
+  return request<DisciplineResponse>(
     "/study/disciplines",
     {
       method: "POST",
@@ -116,7 +115,7 @@ export function createDiscipline(
 export function createTopic(
   input: CreateTopicInput,
 ) {
-  return request<CreatedTopic>(
+  return request<TopicResponse>(
     "/study/topics",
     {
       method: "POST",
@@ -128,11 +127,83 @@ export function createTopic(
 export function createSubtopic(
   input: CreateSubtopicInput,
 ) {
-  return request<CreatedSubtopic>(
+  return request<SubtopicResponse>(
     "/study/subtopics",
     {
       method: "POST",
       body: JSON.stringify(input),
+    },
+  );
+}
+
+export function updateDiscipline(
+  disciplineId: number,
+  name: string,
+) {
+  return request<DisciplineResponse>(
+    `/study/disciplines/${disciplineId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
+export function updateTopic(
+  topicId: number,
+  name: string,
+) {
+  return request<TopicResponse>(
+    `/study/topics/${topicId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
+export function updateSubtopic(
+  subtopicId: number,
+  name: string,
+) {
+  return request<SubtopicResponse>(
+    `/study/subtopics/${subtopicId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
+export function deleteDiscipline(
+  disciplineId: number,
+) {
+  return request<void>(
+    `/study/disciplines/${disciplineId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export function deleteTopic(
+  topicId: number,
+) {
+  return request<void>(
+    `/study/topics/${topicId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export function deleteSubtopic(
+  subtopicId: number,
+) {
+  return request<void>(
+    `/study/subtopics/${subtopicId}`,
+    {
+      method: "DELETE",
     },
   );
 }

@@ -4,6 +4,7 @@ import {
   type FormEvent,
 } from "react";
 
+import { StudyStructureManager } from "../components/admin/DisciplineManager";
 import { useStudy } from "../contexts/StudyContext";
 
 import {
@@ -63,7 +64,9 @@ export function AdminStructure() {
         disciplines.find(
           (discipline) =>
             discipline.id ===
-            Number(subtopicDisciplineId),
+            Number(
+              subtopicDisciplineId,
+            ),
         ),
       [
         disciplines,
@@ -71,14 +74,23 @@ export function AdminStructure() {
       ],
     );
 
-  function showError(error: unknown) {
+  function showMessage(
+    type: "success" | "error",
+    text: string,
+  ) {
     setMessage({
-      type: "error",
-      text:
-        error instanceof Error
-          ? error.message
-          : "Não foi possível salvar.",
+      type,
+      text,
     });
+  }
+
+  function showError(error: unknown) {
+    showMessage(
+      "error",
+      error instanceof Error
+        ? error.message
+        : "Não foi possível salvar.",
+    );
   }
 
   async function handleDisciplineSubmit(
@@ -98,11 +110,10 @@ export function AdminStructure() {
 
       setDisciplineName("");
 
-      setMessage({
-        type: "success",
-        text:
-          "Disciplina cadastrada com sucesso.",
-      });
+      showMessage(
+        "success",
+        "Disciplina cadastrada.",
+      );
     } catch (error) {
       showError(error);
     } finally {
@@ -120,10 +131,10 @@ export function AdminStructure() {
     );
 
     if (!disciplineId) {
-      setMessage({
-        type: "error",
-        text: "Selecione uma disciplina.",
-      });
+      showMessage(
+        "error",
+        "Selecione uma disciplina.",
+      );
 
       return;
     }
@@ -141,11 +152,10 @@ export function AdminStructure() {
 
       setTopicName("");
 
-      setMessage({
-        type: "success",
-        text:
-          "Tópico cadastrado com sucesso.",
-      });
+      showMessage(
+        "success",
+        "Tópico cadastrado.",
+      );
     } catch (error) {
       showError(error);
     } finally {
@@ -163,10 +173,10 @@ export function AdminStructure() {
     );
 
     if (!topicId) {
-      setMessage({
-        type: "error",
-        text: "Selecione um tópico.",
-      });
+      showMessage(
+        "error",
+        "Selecione um tópico.",
+      );
 
       return;
     }
@@ -184,11 +194,10 @@ export function AdminStructure() {
 
       setSubtopicName("");
 
-      setMessage({
-        type: "success",
-        text:
-          "Subtópico cadastrado com sucesso.",
-      });
+      showMessage(
+        "success",
+        "Subtópico cadastrado.",
+      );
     } catch (error) {
       showError(error);
     } finally {
@@ -197,53 +206,44 @@ export function AdminStructure() {
   }
 
   return (
-    <section className="page admin-page">
-      <div className="admin-page-heading">
-        <div>
-          <span className="admin-eyebrow">
-            Administração
-          </span>
+    <section className="admin-structure-page">
+      <header className="admin-structure-header">
+        <span>Administração</span>
 
-          <h2>Estrutura de estudos</h2>
+        <h1>Editar disciplinas</h1>
 
-          <p>
-            Cadastre disciplinas, tópicos e
-            subtópicos.
-          </p>
-        </div>
-      </div>
+        <p>
+          Crie e gerencie toda a estrutura
+          de estudos.
+        </p>
+      </header>
 
       {message && (
         <div
-          className={`form-message ${
+          className={`admin-message ${
             message.type === "success"
-              ? "form-success"
-              : "form-error"
+              ? "admin-message-success"
+              : "admin-message-error"
           }`}
         >
           {message.text}
         </div>
       )}
 
-      <div className="structure-admin-grid">
+      <div className="admin-create-grid">
         <form
-          className="structure-admin-card"
+          className="admin-create-card"
           onSubmit={
             handleDisciplineSubmit
           }
         >
-          <span className="admin-card-number">
+          <div className="admin-create-number">
             1
-          </span>
+          </div>
 
-          <h3>Nova disciplina</h3>
+          <h2>Nova disciplina</h2>
 
-          <p>
-            Crie o nível principal da
-            organização.
-          </p>
-
-          <label className="form-field">
+          <label>
             <span>Nome</span>
 
             <input
@@ -253,36 +253,31 @@ export function AdminStructure() {
                   event.target.value,
                 )
               }
-              placeholder="Ex.: Direito Tributário"
-              maxLength={120}
+              placeholder="Ex.: Direito Penal"
               required
+              maxLength={120}
             />
           </label>
 
           <button
-            className="admin-submit-button"
+            type="submit"
             disabled={isSaving}
           >
-            Criar disciplina
+            Adicionar disciplina
           </button>
         </form>
 
         <form
-          className="structure-admin-card"
+          className="admin-create-card"
           onSubmit={handleTopicSubmit}
         >
-          <span className="admin-card-number">
+          <div className="admin-create-number">
             2
-          </span>
+          </div>
 
-          <h3>Novo tópico</h3>
+          <h2>Novo tópico</h2>
 
-          <p>
-            Vincule o tópico a uma
-            disciplina existente.
-          </p>
-
-          <label className="form-field">
+          <label>
             <span>Disciplina</span>
 
             <select
@@ -311,7 +306,7 @@ export function AdminStructure() {
             </select>
           </label>
 
-          <label className="form-field">
+          <label>
             <span>Nome</span>
 
             <input
@@ -321,42 +316,39 @@ export function AdminStructure() {
                   event.target.value,
                 )
               }
-              placeholder="Ex.: Sistema Tributário"
-              maxLength={120}
+              placeholder="Ex.: Crimes contra a pessoa"
               required
+              maxLength={120}
             />
           </label>
 
           <button
-            className="admin-submit-button"
+            type="submit"
             disabled={isSaving}
           >
-            Criar tópico
+            Adicionar tópico
           </button>
         </form>
 
         <form
-          className="structure-admin-card"
+          className="admin-create-card"
           onSubmit={
             handleSubtopicSubmit
           }
         >
-          <span className="admin-card-number">
+          <div className="admin-create-number">
             3
-          </span>
+          </div>
 
-          <h3>Novo subtópico</h3>
+          <h2>Novo subtópico</h2>
 
-          <p>
-            Vincule o subtópico a um
-            tópico existente.
-          </p>
-
-          <label className="form-field">
+          <label>
             <span>Disciplina</span>
 
             <select
-              value={subtopicDisciplineId}
+              value={
+                subtopicDisciplineId
+              }
               onChange={(event) => {
                 setSubtopicDisciplineId(
                   event.target.value,
@@ -383,7 +375,7 @@ export function AdminStructure() {
             </select>
           </label>
 
-          <label className="form-field">
+          <label>
             <span>Tópico</span>
 
             <select
@@ -414,7 +406,7 @@ export function AdminStructure() {
             </select>
           </label>
 
-          <label className="form-field">
+          <label>
             <span>Nome</span>
 
             <input
@@ -424,20 +416,24 @@ export function AdminStructure() {
                   event.target.value,
                 )
               }
-              placeholder="Ex.: Imunidades tributárias"
-              maxLength={120}
+              placeholder="Ex.: Homicídio"
               required
+              maxLength={120}
             />
           </label>
 
           <button
-            className="admin-submit-button"
+            type="submit"
             disabled={isSaving}
           >
-            Criar subtópico
+            Adicionar subtópico
           </button>
         </form>
       </div>
+
+      <StudyStructureManager
+        onMessage={showMessage}
+      />
     </section>
   );
 }
