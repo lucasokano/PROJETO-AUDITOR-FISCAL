@@ -57,7 +57,7 @@ model Subtopic {
 model Statement {
   id            Int      @id @default(autoincrement())
   subtopicId    Int      @map("subtopic_id")
-  text          String
+  text          String   @db.VarChar(2000)
   correctAnswer Boolean  @map("correct_answer")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -66,5 +66,6 @@ model Statement {
   subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
 
   @@index([subtopicId])
+  @@index([subtopicId, isActive])
   @@map("statements")
 }

@@ -13,6 +13,10 @@ import {
   updateStudyDiscipline,
   updateStudySubtopic,
   updateStudyTopic,
+  createStudyStatementsBulk,
+  deleteStudyStatement,
+  listAllStatements,
+  updateStudyStatement,
 } from "./study.controller.js";
 
 export const studyRoutes = Router();
@@ -75,4 +79,24 @@ studyRoutes.delete(
 studyRoutes.delete(
   "/subtopics/:subtopicId",
   deleteStudySubtopic,
+);
+
+studyRoutes.get(
+  "/statements",
+  listAllStatements,
+);
+
+studyRoutes.post(
+  "/statements/bulk",
+  createStudyStatementsBulk,
+);
+
+studyRoutes.patch(
+  "/statements/:statementId",
+  updateStudyStatement,
+);
+
+studyRoutes.delete(
+  "/statements/:statementId",
+  deleteStudyStatement,
 );

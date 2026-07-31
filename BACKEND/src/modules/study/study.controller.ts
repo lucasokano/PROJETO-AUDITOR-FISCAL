@@ -6,14 +6,18 @@ import type {
 import {
   addDiscipline,
   addStatement,
+  addStatementsBulk,
   addSubtopic,
   addTopic,
   editDiscipline,
+  editStatement,
   editSubtopic,
   editTopic,
+  getAllStatements,
   getStudyStructure,
   getSubtopicStatements,
   removeDiscipline,
+  removeStatement,
   removeSubtopic,
   removeTopic,
 } from "./study.service.js";
@@ -22,6 +26,23 @@ interface IdRouteParams {
   disciplineId?: string;
   topicId?: string;
   subtopicId?: string;
+  statementId?: string;
+}
+
+interface StatementInputBody {
+  text?: unknown;
+  correctAnswer?: unknown;
+}
+
+interface CreateStatementsBulkBody {
+  subtopicId?: unknown;
+  statements?: unknown;
+}
+
+interface UpdateStatementBody {
+  subtopicId?: unknown;
+  text?: unknown;
+  correctAnswer?: unknown;
 }
 
 interface NameBody {
@@ -42,6 +63,31 @@ interface CreateStatementBody {
   subtopicId?: unknown;
   text?: unknown;
   correctAnswer?: unknown;
+}
+
+function isValidStatementInput(
+  value: unknown,
+): value is {
+  text: string;
+  correctAnswer: boolean;
+} {
+  if (
+    typeof value !== "object" ||
+    value === null
+  ) {
+    return false;
+  }
+
+  const statement =
+    value as StatementInputBody;
+
+  return (
+    typeof statement.text === "string" &&
+    statement.text.trim().length > 0 &&
+    statement.text.trim().length <= 2000 &&
+    typeof statement.correctAnswer ===
+      "boolean"
+  );
 }
 
 function parsePositiveInteger(
@@ -126,14 +172,26 @@ export async function createStudyStatement(
     return;
   }
 
-  if (typeof text !== "string") {
-    response.status(400).json({
-      message:
-        "O texto da afirmação é obrigatório.",
-    });
+if (
+  typeof text !== "string" ||
+  text.trim().length === 0
+) {
+  response.status(400).json({
+    message:
+      "O texto da afirmação é obrigatório.",
+  });
 
-    return;
-  }
+  return;
+}
+
+if (text.trim().length > 2000) {
+  response.status(400).json({
+    message:
+      "O texto da afirmação deve ter no máximo 2000 caracteres.",
+  });
+
+  return;
+}
 
   if (
     typeof correctAnswer !== "boolean"
@@ -147,10 +205,10 @@ export async function createStudyStatement(
   }
 
   const statement = await addStatement({
-    subtopicId,
-    text,
-    correctAnswer,
-  });
+  subtopicId,
+  text: text.trim(),
+  correctAnswer,
+});
 
   response.status(201).json(statement);
 }
@@ -449,6 +507,203 @@ export async function deleteStudySubtopic(
   }
 
   await removeSubtopic(subtopicId);
+
+  response.status(204).send();
+}
+
+export async function listAllStatements(
+  _request: Request,
+  response: Response,
+) {
+  const statements =
+    await getAllStatements();
+
+  response.status(200).json(statements);
+}
+
+export async function createStudyStatementsBulk(
+  request: Request<
+    Record<string, never>,
+    unknown,
+    CreateStatementsBulkBody
+  >,
+  response: Response,
+) {
+  const { subtopicId, statements } =
+    request.body;
+
+  if (
+    typeof subtopicId !== "number" ||
+    !Number.isInteger(subtopicId) ||
+    subtopicId <= 0
+  ) {
+    response.status(400).json({
+      message:
+        "O ID do subtópico é inválido.",
+    });
+
+    return;
+  }
+
+  if (
+    !Array.isArray(statements) ||
+    statements.length === 0
+  ) {
+    response.status(400).json({
+      message:
+        "Informe pelo menos uma afirmação.",
+    });
+
+    return;
+  }
+
+  if (statements.length > 500) {
+    response.status(400).json({
+      message:
+        "O limite por importação é de 500 afirmações.",
+    });
+
+    return;
+  }
+
+  const invalidStatementIndex =
+    statements.findIndex(
+      (statement) =>
+        !isValidStatementInput(statement),
+    );
+
+  if (invalidStatementIndex !== -1) {
+    response.status(400).json({
+      message:
+        `A afirmação da posição ${
+          invalidStatementIndex + 1
+        } é inválida.`,
+    });
+
+    return;
+  }
+
+  const normalizedStatements =
+    statements.map((statement) => ({
+      text: statement.text.trim(),
+      correctAnswer:
+        statement.correctAnswer,
+    }));
+
+  const createdStatements =
+    await addStatementsBulk({
+      subtopicId,
+      statements: normalizedStatements,
+    });
+
+  response
+    .status(201)
+    .json(createdStatements);
+}
+
+export async function updateStudyStatement(
+  request: Request<
+    IdRouteParams,
+    unknown,
+    UpdateStatementBody
+  >,
+  response: Response,
+) {
+  const statementId =
+    parsePositiveInteger(
+      request.params.statementId,
+    );
+
+  if (!statementId) {
+    response.status(400).json({
+      message:
+        "O ID da afirmação é inválido.",
+    });
+
+    return;
+  }
+
+  const {
+    subtopicId,
+    text,
+    correctAnswer,
+  } = request.body;
+
+  if (
+    typeof subtopicId !== "number" ||
+    !Number.isInteger(subtopicId) ||
+    subtopicId <= 0
+  ) {
+    response.status(400).json({
+      message:
+        "O ID do subtópico é inválido.",
+    });
+
+    return;
+  }
+
+  if (
+    typeof text !== "string" ||
+    text.trim().length === 0
+  ) {
+    response.status(400).json({
+      message:
+        "O texto da afirmação é obrigatório.",
+    });
+
+    return;
+  }
+
+  if (text.trim().length > 2000) {
+    response.status(400).json({
+      message:
+        "O texto da afirmação deve ter no máximo 2000 caracteres.",
+    });
+
+    return;
+  }
+
+  if (
+    typeof correctAnswer !== "boolean"
+  ) {
+    response.status(400).json({
+      message:
+        "A resposta correta é obrigatória.",
+    });
+
+    return;
+  }
+
+  const statement =
+    await editStatement({
+      statementId,
+      subtopicId,
+      text: text.trim(),
+      correctAnswer,
+    });
+
+  response.status(200).json(statement);
+}
+
+export async function deleteStudyStatement(
+  request: Request<IdRouteParams>,
+  response: Response,
+) {
+  const statementId =
+    parsePositiveInteger(
+      request.params.statementId,
+    );
+
+  if (!statementId) {
+    response.status(400).json({
+      message:
+        "O ID da afirmação é inválido.",
+    });
+
+    return;
+  }
+
+  await removeStatement(statementId);
 
   response.status(204).send();
 }

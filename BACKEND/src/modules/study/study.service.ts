@@ -3,14 +3,18 @@ import { AppError } from "../../errors/AppError.js";
 import {
   createDiscipline,
   createStatement,
+  createStatementsBulk,
   createSubtopic,
   createTopic,
   deleteDiscipline,
+  deleteStatement,
   deleteSubtopic,
   deleteTopic,
+  findAllStatements,
   findDisciplineById,
   findDisciplineBySlug,
   findDisciplineDetailsById,
+  findStatementById,
   findStatementsBySubtopicId,
   findStudyStructure,
   findSubtopicById,
@@ -20,9 +24,27 @@ import {
   findTopicById,
   findTopicDetailsById,
   updateDiscipline,
+  updateStatement,
   updateSubtopic,
   updateTopic,
 } from "./study.repository.js";
+
+interface BulkStatementInput {
+  text: string;
+  correctAnswer: boolean;
+}
+
+interface CreateStatementsBulkInput {
+  subtopicId: number;
+  statements: BulkStatementInput[];
+}
+
+interface UpdateStatementInput {
+  statementId: number;
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
 
 interface CreateStatementInput {
   subtopicId: number;
@@ -57,6 +79,26 @@ interface UpdateTopicInput {
 interface UpdateSubtopicInput {
   subtopicId: number;
   name: string;
+}
+
+function validateStatementText(value: string) {
+  const text = value.trim();
+
+  if (text.length < 3) {
+    throw new AppError(
+      "A afirmação deve possuir pelo menos 3 caracteres.",
+      400,
+    );
+  }
+
+  if (text.length > 2000) {
+    throw new AppError(
+      "A afirmação deve possuir no máximo 2000 caracteres.",
+      400,
+    );
+  }
+
+  return text;
 }
 
 function normalizeName(name: string) {
@@ -118,14 +160,9 @@ export async function getSubtopicStatements(
 export async function addStatement(
   input: CreateStatementInput,
 ) {
-  const text = input.text.trim();
-
-  if (text.length < 3) {
-    throw new AppError(
-      "A afirmação deve possuir pelo menos 3 caracteres.",
-      400,
-    );
-  }
+  const text = validateStatementText(
+    input.text,
+  );
 
   const subtopic =
     await findSubtopicById(
@@ -439,4 +476,114 @@ export async function removeSubtopic(
   }
 
   await deleteSubtopic(subtopicId);
+}
+
+export function getAllStatements() {
+  return findAllStatements();
+}
+
+export async function addStatementsBulk(
+  input: CreateStatementsBulkInput,
+) {
+  const subtopic =
+    await findSubtopicById(
+      input.subtopicId,
+    );
+
+  if (!subtopic) {
+    throw new AppError(
+      "Subtópico não encontrado.",
+      404,
+    );
+  }
+
+  if (input.statements.length === 0) {
+    throw new AppError(
+      "Informe pelo menos uma afirmação.",
+      400,
+    );
+  }
+
+  if (input.statements.length > 500) {
+    throw new AppError(
+      "O limite por importação é de 500 afirmações.",
+      400,
+    );
+  }
+
+  const statements =
+    input.statements.map(
+      (statement) => ({
+        text: validateStatementText(
+          statement.text,
+        ),
+        correctAnswer:
+          statement.correctAnswer,
+      }),
+    );
+
+  return createStatementsBulk({
+    subtopicId: input.subtopicId,
+    statements,
+  });
+}
+
+export async function editStatement(
+  input: UpdateStatementInput,
+) {
+  const text = validateStatementText(
+    input.text,
+  );
+
+  const statement =
+    await findStatementById(
+      input.statementId,
+    );
+
+  if (!statement) {
+    throw new AppError(
+      "Afirmação não encontrada.",
+      404,
+    );
+  }
+
+  const subtopic =
+    await findSubtopicById(
+      input.subtopicId,
+    );
+
+  if (!subtopic) {
+    throw new AppError(
+      "Subtópico não encontrado.",
+      404,
+    );
+  }
+
+  return updateStatement(
+    input.statementId,
+    {
+      subtopicId: input.subtopicId,
+      text,
+      correctAnswer:
+        input.correctAnswer,
+    },
+  );
+}
+
+export async function removeStatement(
+  statementId: number,
+) {
+  const statement =
+    await findStatementById(
+      statementId,
+    );
+
+  if (!statement) {
+    throw new AppError(
+      "Afirmação não encontrada.",
+      404,
+    );
+  }
+
+  await deleteStatement(statementId);
 }

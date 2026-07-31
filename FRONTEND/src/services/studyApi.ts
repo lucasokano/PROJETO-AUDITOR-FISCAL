@@ -1,10 +1,12 @@
 import type {
   CreateDisciplineInput,
   CreateStatementInput,
+  CreateStatementsBulkInput,
   CreateSubtopicInput,
   CreateTopicInput,
   Discipline,
   Statement,
+  UpdateStatementInput,
 } from "../types/study";
 
 interface DisciplineResponse {
@@ -32,6 +34,16 @@ interface StatementResponse {
   subtopicId: number;
   text: string;
   correctAnswer: boolean;
+}
+
+interface StatementResponse {
+  id: number;
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const API_URL =
@@ -77,6 +89,12 @@ export function getStudyStructure() {
   );
 }
 
+export function getAllStatements() {
+  return request<Statement[]>(
+    "/study/statements",
+  );
+}
+
 export function getStatementsBySubtopic(
   subtopicId: number,
 ) {
@@ -96,6 +114,42 @@ export function createStatement(
     {
       method: "POST",
       body: JSON.stringify(input),
+    },
+  );
+}
+
+export function createStatementsBulk(
+  input: CreateStatementsBulkInput,
+) {
+  return request<StatementResponse[]>(
+    "/study/statements/bulk",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function updateStatement(
+  statementId: number,
+  input: UpdateStatementInput,
+) {
+  return request<StatementResponse>(
+    `/study/statements/${statementId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export function deleteStatement(
+  statementId: number,
+) {
+  return request<void>(
+    `/study/statements/${statementId}`,
+    {
+      method: "DELETE",
     },
   );
 }

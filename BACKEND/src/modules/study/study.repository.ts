@@ -1,5 +1,11 @@
 import { prisma } from "../../config/prisma.js";
 
+interface UpdateStatementData {
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
+
 interface CreateDisciplineData {
   name: string;
   slug: string;
@@ -359,6 +365,78 @@ export function deleteSubtopic(
   return prisma.subtopic.delete({
     where: {
       id: subtopicId,
+    },
+  });
+}
+
+export function findAllStatements() {
+  return prisma.statement.findMany({
+    orderBy: {
+      id: "desc",
+    },
+    include: {
+      subtopic: {
+        include: {
+          topic: {
+            include: {
+              discipline: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export function findStatementById(
+  statementId: number,
+) {
+  return prisma.statement.findUnique({
+    where: {
+      id: statementId,
+    },
+  });
+}
+
+export function createStatementsBulk(input: {
+  subtopicId: number;
+  statements: {
+    text: string;
+    correctAnswer: boolean;
+  }[];
+}) {
+  return prisma.$transaction(
+    input.statements.map((statement) =>
+      prisma.statement.create({
+        data: {
+          subtopicId: input.subtopicId,
+          text: statement.text,
+          correctAnswer:
+            statement.correctAnswer,
+        },
+      }),
+    ),
+  );
+}
+
+export function updateStatement(
+  statementId: number,
+  data: UpdateStatementData,
+) {
+  return prisma.statement.update({
+    where: {
+      id: statementId,
+    },
+    data,
+  });
+}
+
+export function deleteStatement(
+  statementId: number,
+) {
+  return prisma.statement.delete({
+    where: {
+      id: statementId,
     },
   });
 }

@@ -20,13 +20,45 @@ export interface Discipline {
 
 export interface Statement {
   id: number;
+  subtopicId: number;
   text: string;
   correctAnswer: boolean;
+
+  subtopic?: {
+    id: number;
+    name: string;
+
+    topic: {
+      id: number;
+      name: string;
+
+      discipline: {
+        id: number;
+        name: string;
+      };
+    };
+  };
 }
 export interface CreateStatementInput {
   subtopicId: number;
   text: string;
   correctAnswer: boolean;
+}
+
+export interface UpdateStatementInput {
+  subtopicId: number;
+  text: string;
+  correctAnswer: boolean;
+}
+
+export interface BulkStatementItem {
+  text: string;
+  correctAnswer: boolean;
+}
+
+export interface CreateStatementsBulkInput {
+  subtopicId: number;
+  statements: BulkStatementItem[];
 }
 
 export interface CreatedStatement
