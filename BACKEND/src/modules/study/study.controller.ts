@@ -22,6 +22,8 @@ import {
   removeTopic,
   registerAnswer,
   getDueReviewStatements,
+  getDisciplineProgress,
+  getStudyDashboard,
 } from "./study.service.js";
 
 interface IdRouteParams {
@@ -114,6 +116,16 @@ function parsePositiveInteger(
   }
 
   return parsed;
+}
+
+export async function listDisciplineProgress(
+  _request: Request,
+  response: Response,
+) {
+  const progress =
+    await getDisciplineProgress();
+
+  response.status(200).json(progress);
 }
 
 export async function listStudyStructure(
@@ -777,4 +789,14 @@ export async function listDueReviewStatements(
     await getDueReviewStatements(limit);
 
   response.status(200).json(statements);
+}
+
+export async function getDashboard(
+  _request: Request,
+  response: Response,
+) {
+  const dashboard =
+    await getStudyDashboard();
+
+  response.status(200).json(dashboard);
 }

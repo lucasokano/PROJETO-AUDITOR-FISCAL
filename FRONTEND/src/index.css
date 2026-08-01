@@ -2097,3 +2097,57 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+.home-progress-panel {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.home-progress-panel h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.discipline-progress-card {
+  background: #242424;
+  border: 1px solid #343434;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.discipline-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.discipline-progress-header span {
+  font-weight: 600;
+}
+
+.discipline-progress-header strong {
+  color: #4cafef;
+  font-size: 1rem;
+}
+
+.discipline-progress-bar {
+  width: 100%;
+  height: 10px;
+  background: #161616;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.discipline-progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #3b82f6,
+    #06b6d4
+  );
+  transition: width .3s;
+}
+

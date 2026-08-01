@@ -7,6 +7,7 @@ import type {
   Discipline,
   Statement,
   UpdateStatementInput,
+  DisciplineProgress,
 } from "../types/study";
 
 interface DisciplineResponse {
@@ -278,3 +279,10 @@ export function registerAnswer(
     },
   );
 }
+
+export function getDisciplineProgress() {
+  return request<DisciplineProgress[]>(
+    "/study/discipline-progress",
+  );
+}
+

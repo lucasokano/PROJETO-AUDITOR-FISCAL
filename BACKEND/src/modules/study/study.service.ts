@@ -29,6 +29,8 @@ import {
   updateTopic,
   createAnswerAttempt,
   findDueReviewStatements,
+  findDisciplineProgress,
+  countDueReviewStatements,
 } from "./study.repository.js";
 
 interface BulkStatementInput {
@@ -637,4 +639,40 @@ export async function getDueReviewStatements(
   }
 
   return findDueReviewStatements(limit);
+}
+export async function getDisciplineProgress() {
+  const disciplines =
+    await findDisciplineProgress();
+
+  return disciplines.map((discipline) => ({
+    disciplineId: discipline.disciplineId,
+    name: discipline.name,
+    totalStatements:
+      discipline.totalStatements,
+    answeredStatements:
+      discipline.answeredStatements,
+    percentage:
+      discipline.totalStatements === 0
+        ? 0
+        : Math.round(
+            (discipline.answeredStatements /
+              discipline.totalStatements) *
+              100,
+          ),
+  }));
+}
+
+export async function getStudyDashboard() {
+  const [
+    dueReviews,
+    disciplines,
+  ] = await Promise.all([
+    countDueReviewStatements(),
+    getDisciplineProgress(),
+  ]);
+
+  return {
+    dueReviews,
+    disciplines,
+  };
 }

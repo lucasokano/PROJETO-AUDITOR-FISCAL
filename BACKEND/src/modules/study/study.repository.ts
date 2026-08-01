@@ -612,3 +612,59 @@ export function findDueReviewStatements(
     take: limit,
   });
 }
+
+interface DisciplineProgressRow {
+  disciplineId: number;
+  name: string;
+  totalStatements: number;
+  answeredStatements: number;
+}
+
+export function findDisciplineProgress() {
+  return prisma.$queryRaw<
+    DisciplineProgressRow[]
+  >`
+    SELECT
+      d.id AS "disciplineId",
+      d.name,
+      COUNT(DISTINCT s.id)::int
+        AS "totalStatements",
+      COUNT(
+        DISTINCT CASE
+          WHEN aa.id IS NOT NULL
+          THEN s.id
+        END
+      )::int AS "answeredStatements"
+    FROM disciplines d
+    LEFT JOIN topics t
+      ON t.discipline_id = d.id
+    LEFT JOIN subtopics st
+      ON st.topic_id = t.id
+    LEFT JOIN statements s
+      ON s.subtopic_id = st.id
+      AND s.is_active = true
+    LEFT JOIN answer_attempts aa
+      ON aa.statement_id = s.id
+    GROUP BY
+      d.id,
+      d.name,
+      d.display_order
+    ORDER BY
+      d.display_order ASC,
+      d.name ASC
+  `;
+}
+
+export function countDueReviewStatements() {
+  return prisma.statementProgress.count({
+    where: {
+      nextReviewAt: {
+        lte: new Date(),
+      },
+
+      statement: {
+        isActive: true,
+      },
+    },
+  });
+}

@@ -19,6 +19,8 @@ import {
   updateStudyStatement,
   registerStudyAnswer,
   listDueReviewStatements,
+  listDisciplineProgress,
+  getDashboard,
 } from "./study.controller.js";
 
 export const studyRoutes = Router();
@@ -56,6 +58,16 @@ studyRoutes.post(
 studyRoutes.get(
   "/review",
   listDueReviewStatements,
+);
+
+studyRoutes.get(
+  "/discipline-progress",
+  listDisciplineProgress,
+);
+
+studyRoutes.get(
+  "/dashboard",
+  getDashboard,
 );
 
 studyRoutes.post(

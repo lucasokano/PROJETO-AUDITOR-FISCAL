@@ -1,3 +1,11 @@
+export interface DisciplineProgress {
+  disciplineId: number;
+  name: string;
+  totalStatements: number;
+  answeredStatements: number;
+  percentage: number;
+}
+
 export interface Subtopic {
   id: number;
   name: string;
