@@ -8,8 +8,10 @@ import { useParams } from "react-router-dom";
 
 import { StatementCard } from "../components/StatementCard";
 import { useStudy } from "../contexts/StudyContext";
-import { getSubtopicStatements } from "../services/studyApi";
-
+import {
+  getSubtopicStatements,
+  registerAnswer,
+} from "../services/studyApi";
 import type { Statement } from "../types/study";
 
 interface AnswerResult {
@@ -140,16 +142,23 @@ useEffect(() => {
       ? Math.round((correct / total) * 100)
       : 0;
 
-  function handleAnswer(
-    statement: Statement,
-    selectedAnswer: boolean,
-  ) {
+  async function handleAnswer(
+  statement: Statement,
+  selectedAnswer: boolean,
+) {
+  try {
+    await registerAnswer(
+      statement.id,
+      selectedAnswer,
+    );
+
     setAnswers((current) => {
-      const alreadyAnswered = current.some(
-        (answer) =>
-          answer.statementId ===
-          statement.id,
-      );
+      const alreadyAnswered =
+        current.some(
+          (answer) =>
+            answer.statementId ===
+            statement.id,
+        );
 
       if (alreadyAnswered) {
         return current;
@@ -165,7 +174,10 @@ useEffect(() => {
         },
       ];
     });
+  } catch (error) {
+    console.error(error);
   }
+}
 
   function restartSubtopic() {
     setAnswers([]);

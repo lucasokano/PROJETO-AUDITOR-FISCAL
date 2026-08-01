@@ -20,6 +20,8 @@ import {
   removeStatement,
   removeSubtopic,
   removeTopic,
+  registerAnswer,
+  getDueReviewStatements,
 } from "./study.service.js";
 
 interface IdRouteParams {
@@ -27,6 +29,11 @@ interface IdRouteParams {
   topicId?: string;
   subtopicId?: string;
   statementId?: string;
+}
+
+interface RegisterAnswerBody {
+  statementId?: unknown;
+  selectedAnswer?: unknown;
 }
 
 interface StatementInputBody {
@@ -706,4 +713,68 @@ export async function deleteStudyStatement(
   await removeStatement(statementId);
 
   response.status(204).send();
+}
+
+export async function registerStudyAnswer(
+  request: Request<
+    Record<string, never>,
+    unknown,
+    RegisterAnswerBody
+  >,
+  response: Response,
+) {
+  const {
+    statementId,
+    selectedAnswer,
+  } = request.body;
+
+  if (
+    typeof statementId !== "number" ||
+    !Number.isInteger(statementId) ||
+    statementId <= 0
+  ) {
+    response.status(400).json({
+      message:
+        "O ID da afirmação é inválido.",
+    });
+
+    return;
+  }
+
+  if (
+    typeof selectedAnswer !==
+    "boolean"
+  ) {
+    response.status(400).json({
+      message:
+        "A resposta é obrigatória.",
+    });
+
+    return;
+  }
+
+  const attempt =
+    await registerAnswer({
+      statementId,
+      selectedAnswer,
+    });
+
+  response.status(201).json(attempt);
+}
+
+export async function listDueReviewStatements(
+  request: Request,
+  response: Response,
+) {
+  const limitParam = request.query.limit;
+
+  const limit =
+    typeof limitParam === "string"
+      ? Number(limitParam)
+      : 30;
+
+  const statements =
+    await getDueReviewStatements(limit);
+
+  response.status(200).json(statements);
 }

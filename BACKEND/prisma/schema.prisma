@@ -65,7 +65,45 @@ model Statement {
 
   subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
 
+  attempts AnswerAttempt[]
+  progress StatementProgress?
+
   @@index([subtopicId])
   @@index([subtopicId, isActive])
   @@map("statements")
+}
+
+model AnswerAttempt {
+  id             Int      @id @default(autoincrement())
+  statementId    Int      @map("statement_id")
+  selectedAnswer Boolean  @map("selected_answer")
+  isCorrect      Boolean  @map("is_correct")
+  answeredAt     DateTime @default(now()) @map("answered_at")
+
+  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@index([statementId])
+  @@index([answeredAt])
+  @@index([isCorrect])
+  @@map("answer_attempts")
+}
+
+model StatementProgress {
+  id                 Int       @id @default(autoincrement())
+  statementId        Int       @unique @map("statement_id")
+  totalAttempts      Int       @default(0) @map("total_attempts")
+  correctAttempts    Int       @default(0) @map("correct_attempts")
+  incorrectAttempts  Int       @default(0) @map("incorrect_attempts")
+  consecutiveCorrect Int       @default(0) @map("consecutive_correct")
+  lastResult         Boolean?  @map("last_result")
+  lastAnsweredAt     DateTime? @map("last_answered_at")
+  nextReviewAt       DateTime? @map("next_review_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@index([nextReviewAt])
+  @@index([lastResult])
+  @@map("statement_progress")
 }

@@ -27,6 +27,8 @@ import {
   updateStatement,
   updateSubtopic,
   updateTopic,
+  createAnswerAttempt,
+  findDueReviewStatements,
 } from "./study.repository.js";
 
 interface BulkStatementInput {
@@ -44,6 +46,11 @@ interface UpdateStatementInput {
   subtopicId: number;
   text: string;
   correctAnswer: boolean;
+}
+
+interface RegisterAnswerInput {
+  statementId: number;
+  selectedAnswer: boolean;
 }
 
 interface CreateStatementInput {
@@ -586,4 +593,48 @@ export async function removeStatement(
   }
 
   await deleteStatement(statementId);
+}
+
+export async function registerAnswer(
+  input: RegisterAnswerInput,
+) {
+  const statement =
+    await findStatementById(
+      input.statementId,
+    );
+
+  if (!statement) {
+    throw new AppError(
+      "Afirmação não encontrada.",
+      404,
+    );
+  }
+
+  const isCorrect =
+    statement.correctAnswer ===
+    input.selectedAnswer;
+
+  return createAnswerAttempt({
+    statementId: input.statementId,
+    selectedAnswer:
+      input.selectedAnswer,
+    isCorrect,
+  });
+}
+
+export async function getDueReviewStatements(
+  limit = 30,
+) {
+  if (limit <= 0) {
+    throw new AppError(
+      "O limite deve ser maior que zero.",
+      400,
+    );
+  }
+
+  if (limit > 200) {
+    limit = 200;
+  }
+
+  return findDueReviewStatements(limit);
 }

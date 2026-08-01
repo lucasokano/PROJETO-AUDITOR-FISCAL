@@ -17,6 +17,8 @@ import {
   deleteStudyStatement,
   listAllStatements,
   updateStudyStatement,
+  registerStudyAnswer,
+  listDueReviewStatements,
 } from "./study.controller.js";
 
 export const studyRoutes = Router();
@@ -49,6 +51,16 @@ studyRoutes.post(
 studyRoutes.post(
   "/statements",
   createStudyStatement,
+);
+
+studyRoutes.get(
+  "/review",
+  listDueReviewStatements,
+);
+
+studyRoutes.post(
+  "/answer",
+  registerStudyAnswer,
 );
 
 studyRoutes.patch(

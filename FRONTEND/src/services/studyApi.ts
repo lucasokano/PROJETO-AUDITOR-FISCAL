@@ -34,16 +34,17 @@ interface StatementResponse {
   subtopicId: number;
   text: string;
   correctAnswer: boolean;
-}
-
-interface StatementResponse {
-  id: number;
-  subtopicId: number;
-  text: string;
-  correctAnswer: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+interface AnswerAttemptResponse {
+  id: number;
+  statementId: number;
+  selectedAnswer: boolean;
+  isCorrect: boolean;
+  answeredAt: string;
 }
 
 const API_URL =
@@ -258,6 +259,22 @@ export function deleteSubtopic(
     `/study/subtopics/${subtopicId}`,
     {
       method: "DELETE",
+    },
+  );
+}
+
+export function registerAnswer(
+  statementId: number,
+  selectedAnswer: boolean,
+) {
+  return request<AnswerAttemptResponse>(
+    "/study/answer",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        statementId,
+        selectedAnswer,
+      }),
     },
   );
 }

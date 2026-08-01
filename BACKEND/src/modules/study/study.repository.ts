@@ -1,5 +1,11 @@
 import { prisma } from "../../config/prisma.js";
 
+interface CreateAnswerAttemptData {
+  statementId: number;
+  selectedAnswer: boolean;
+  isCorrect: boolean;
+}
+
 interface UpdateStatementData {
   subtopicId: number;
   text: string;
@@ -438,5 +444,171 @@ export function deleteStatement(
     where: {
       id: statementId,
     },
+  });
+}
+
+export async function createAnswerAttempt(
+  data: CreateAnswerAttemptData,
+) {
+  return prisma.$transaction(
+    async (transaction) => {
+      const currentProgress =
+        await transaction.statementProgress.findUnique({
+          where: {
+            statementId: data.statementId,
+          },
+          select: {
+            consecutiveCorrect: true,
+          },
+        });
+
+      const consecutiveCorrect =
+        data.isCorrect
+          ? (currentProgress?.consecutiveCorrect ??
+              0) + 1
+          : 0;
+
+      const reviewIntervals = [
+        2,
+        5,
+        10,
+        20,
+        40,
+      ];
+
+      const intervalIndex = Math.min(
+        Math.max(consecutiveCorrect - 1, 0),
+        reviewIntervals.length - 1,
+      );
+
+      const reviewDays = data.isCorrect
+  ? (reviewIntervals[intervalIndex] ?? 40)
+  : 1;
+
+      const answeredAt = new Date();
+
+      const nextReviewAt = new Date(
+        answeredAt,
+      );
+
+      nextReviewAt.setDate(
+        nextReviewAt.getDate() +
+          reviewDays,
+      );
+
+      const attempt =
+        await transaction.answerAttempt.create({
+          data: {
+            statementId: data.statementId,
+            selectedAnswer:
+              data.selectedAnswer,
+            isCorrect: data.isCorrect,
+            answeredAt,
+          },
+        });
+
+      const progress =
+        await transaction.statementProgress.upsert({
+          where: {
+            statementId: data.statementId,
+          },
+
+          create: {
+            statementId: data.statementId,
+            totalAttempts: 1,
+            correctAttempts: data.isCorrect
+              ? 1
+              : 0,
+            incorrectAttempts: data.isCorrect
+              ? 0
+              : 1,
+            consecutiveCorrect,
+            lastResult: data.isCorrect,
+            lastAnsweredAt: answeredAt,
+            nextReviewAt,
+          },
+
+          update: {
+            totalAttempts: {
+              increment: 1,
+            },
+
+            correctAttempts: data.isCorrect
+              ? {
+                  increment: 1,
+                }
+              : undefined,
+
+            incorrectAttempts:
+              data.isCorrect
+                ? undefined
+                : {
+                    increment: 1,
+                  },
+
+            consecutiveCorrect,
+            lastResult: data.isCorrect,
+            lastAnsweredAt: answeredAt,
+            nextReviewAt,
+          },
+        });
+
+      return {
+        attempt,
+        progress,
+      };
+    },
+  );
+}
+
+export function getAnswerHistory(
+  statementId: number,
+) {
+  return prisma.answerAttempt.findMany({
+    where: {
+      statementId,
+    },
+    orderBy: {
+      answeredAt: "desc",
+    },
+  });
+}
+
+export function findDueReviewStatements(
+  limit: number,
+) {
+  return prisma.statement.findMany({
+    where: {
+      isActive: true,
+      progress: {
+        is: {
+          nextReviewAt: {
+            lte: new Date(),
+          },
+        },
+      },
+    },
+
+    include: {
+      progress: true,
+
+      subtopic: {
+        include: {
+          topic: {
+            include: {
+              discipline: true,
+            },
+          },
+        },
+      },
+    },
+
+    orderBy: {
+      progress: {
+        nextReviewAt: "asc",
+      },
+    },
+
+    take: limit,
   });
 }
