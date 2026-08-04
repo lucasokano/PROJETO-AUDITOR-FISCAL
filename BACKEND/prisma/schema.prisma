@@ -46,8 +46,10 @@ model Subtopic {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  topic      Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  statements Statement[]
+  topic                Topic                 @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  statements           Statement[]
+  knowledgeItems       KnowledgeItem[]
+  classificationGroups ClassificationGroup[]
 
   @@unique([topicId, slug])
   @@index([topicId])
@@ -106,4 +108,88 @@ model StatementProgress {
   @@index([nextReviewAt])
   @@index([lastResult])
   @@map("statement_progress")
+}
+
+model KnowledgeItem {
+  id          Int      @id @default(autoincrement())
+  subtopicId  Int      @map("subtopic_id")
+  text        String
+  explanation String?
+  reference   String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  // Domain invariant: an item may only use categories whose group belongs to the same subtopic.
+  classifications ItemClassification[]
+  progress        KnowledgeItemProgress?
+
+  @@index([subtopicId])
+  @@map("knowledge_items")
+}
+
+model ClassificationGroup {
+  id          Int      @id @default(autoincrement())
+  subtopicId  Int      @map("subtopic_id")
+  name        String   @db.VarChar(160)
+  instruction String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subtopic   Subtopic                 @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+  categories ClassificationCategory[]
+
+  @@unique([subtopicId, name])
+  @@index([subtopicId])
+  @@map("classification_groups")
+}
+
+model ClassificationCategory {
+  id           Int    @id @default(autoincrement())
+  groupId      Int    @map("group_id")
+  name         String @db.VarChar(160)
+  displayOrder Int    @default(0) @map("display_order")
+
+  group           ClassificationGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  classifications ItemClassification[]
+
+  @@unique([groupId, name])
+  @@index([groupId])
+  @@map("classification_categories")
+}
+
+model ItemClassification {
+  id         Int @id @default(autoincrement())
+  itemId     Int @map("item_id")
+  categoryId Int @map("category_id")
+
+  item     KnowledgeItem          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  category ClassificationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, categoryId])
+  @@index([itemId])
+  @@index([categoryId])
+  @@map("item_classifications")
+}
+
+model KnowledgeItemProgress {
+  id                 Int       @id @default(autoincrement())
+  itemId             Int       @unique @map("item_id")
+  totalAttempts      Int       @default(0) @map("total_attempts")
+  correctAttempts    Int       @default(0) @map("correct_attempts")
+  incorrectAttempts  Int       @default(0) @map("incorrect_attempts")
+  consecutiveCorrect Int       @default(0) @map("consecutive_correct")
+  lastResult         Boolean?  @map("last_result")
+  lastAnsweredAt     DateTime? @map("last_answered_at")
+  nextReviewAt       DateTime? @map("next_review_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  item KnowledgeItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([nextReviewAt])
+  @@map("knowledge_item_progress")
 }
