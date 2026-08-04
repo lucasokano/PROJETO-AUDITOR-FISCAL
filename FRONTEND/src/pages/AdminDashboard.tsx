@@ -64,7 +64,10 @@ export function AdminDashboard() {
           </span>
         </Link>
 
-        <article className="admin-dashboard-card admin-dashboard-card-disabled">
+        <Link
+          className="admin-dashboard-card"
+          to="/admin/knowledge"
+        >
           <span className="admin-dashboard-card-icon">
             <Boxes size={22} />
           </span>
@@ -77,10 +80,10 @@ export function AdminDashboard() {
             </p>
           </div>
 
-          <span className="admin-dashboard-card-status">
-            Em breve
+          <span className="admin-dashboard-card-action">
+            Acessar
           </span>
-        </article>
+        </Link>
       </div>
     </section>
   );

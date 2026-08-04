@@ -19,6 +19,7 @@ import {
   findItemIdentity,
   findKnowledgeBySubtopicId,
   findSubtopicById,
+  importKnowledgeItems,
   updateCategory,
   updateGroup,
   updateItem,
@@ -503,4 +504,50 @@ export async function getKnowledgeBySubtopic(
       ),
     })),
   };
+}
+
+export async function importItems(input: {
+  subtopicId: number;
+  groupId: number;
+  items: Array<{
+    line: number;
+    text: string;
+    categoryName: string;
+    reference?: string | null;
+  }>;
+}) {
+  await ensureSubtopicExists(input.subtopicId);
+  const group = await findGroupById(input.groupId);
+
+  if (!group) {
+    throw new AppError("Grupo não encontrado.", 404);
+  }
+
+  if (group.subtopicId !== input.subtopicId) {
+    throw new AppError(
+      "O grupo não pertence ao subtópico selecionado.",
+      409,
+    );
+  }
+
+  if (input.items.length === 0 || input.items.length > 1000) {
+    throw new AppError(
+      "A importação deve conter entre 1 e 1000 linhas válidas.",
+      400,
+    );
+  }
+
+  const items = input.items.map((item) => ({
+    line: item.line,
+    text: validateItemText(item.text),
+    categoryName: validateName(item.categoryName, 1),
+    reference:
+      normalizeOptionalText(item.reference) ?? null,
+  }));
+
+  return importKnowledgeItems({
+    subtopicId: input.subtopicId,
+    groupId: input.groupId,
+    items,
+  });
 }

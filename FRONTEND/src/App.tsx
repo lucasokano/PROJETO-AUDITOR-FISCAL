@@ -6,10 +6,12 @@ import {
 
 import { Layout } from "./components/Layout";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { AdminKnowledge } from "./pages/AdminKnowledge";
 import { AdminStatements } from "./pages/AdminStatements";
 import { AdminStructure } from "./pages/AdminStructure";
 import { Discipline } from "./pages/Discipline";
 import { Home } from "./pages/Home";
+import { ExerciseSession } from "./pages/ExerciseSession";
 import { Review } from "./pages/Review";
 
 function App() {
@@ -28,6 +30,11 @@ function App() {
           />
 
           <Route
+            path="/exercicios"
+            element={<ExerciseSession />}
+          />
+
+          <Route
             path="/admin"
             element={<AdminDashboard />}
           />
@@ -40,6 +47,11 @@ function App() {
           <Route
             path="/admin/structure"
             element={<AdminStructure />}
+          />
+
+          <Route
+            path="/admin/knowledge"
+            element={<AdminKnowledge />}
           />
 
           <Route

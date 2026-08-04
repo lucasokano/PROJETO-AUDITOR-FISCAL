@@ -9,6 +9,7 @@ import {
   deleteKnowledgeGroup,
   deleteKnowledgeItem,
   getSubtopicKnowledge,
+  importKnowledgeItemsBulk,
   updateKnowledgeCategory,
   updateKnowledgeGroup,
   updateKnowledgeItem,
@@ -25,6 +26,7 @@ knowledgeRoutes.patch("/categories/:categoryId", updateKnowledgeCategory);
 knowledgeRoutes.delete("/categories/:categoryId", deleteKnowledgeCategory);
 
 knowledgeRoutes.post("/items", createKnowledgeItem);
+knowledgeRoutes.post("/items/import", importKnowledgeItemsBulk);
 knowledgeRoutes.patch("/items/:itemId", updateKnowledgeItem);
 knowledgeRoutes.delete("/items/:itemId", deleteKnowledgeItem);
 

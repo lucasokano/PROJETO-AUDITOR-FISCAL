@@ -268,3 +268,125 @@ export function findKnowledgeBySubtopicId(
     },
   });
 }
+
+export function importKnowledgeItems(input: {
+  subtopicId: number;
+  groupId: number;
+  items: Array<{
+    line: number;
+    text: string;
+    categoryName: string;
+    reference: string | null;
+  }>;
+}) {
+  return prisma.$transaction(async (transaction) => {
+    const categories =
+      await transaction.classificationCategory.findMany({
+        where: { groupId: input.groupId },
+        select: { id: true, name: true },
+      });
+
+    const categoryByName = new Map(
+      categories.map((category) => [
+        category.name.toLocaleLowerCase("pt-BR"),
+        category,
+      ]),
+    );
+
+    let created = 0;
+    let updated = 0;
+    let ignored = 0;
+    const missingCategories: Array<{
+      line: number;
+      category: string;
+    }> = [];
+
+    for (const entry of input.items) {
+      const category = categoryByName.get(
+        entry.categoryName.toLocaleLowerCase("pt-BR"),
+      );
+
+      if (!category) {
+        missingCategories.push({
+          line: entry.line,
+          category: entry.categoryName,
+        });
+        continue;
+      }
+
+      let item = await transaction.knowledgeItem.findFirst({
+        where: {
+          subtopicId: input.subtopicId,
+          text: { equals: entry.text, mode: "insensitive" },
+        },
+        select: { id: true, reference: true },
+      });
+
+      if (!item) {
+        item = await transaction.knowledgeItem.create({
+          data: {
+            subtopicId: input.subtopicId,
+            text: entry.text,
+            reference: entry.reference,
+          },
+          select: { id: true, reference: true },
+        });
+        created++;
+      } else {
+        let changed = false;
+
+        if (!item.reference && entry.reference) {
+          item = await transaction.knowledgeItem.update({
+            where: { id: item.id },
+            data: { reference: entry.reference },
+            select: { id: true, reference: true },
+          });
+          changed = true;
+        }
+
+        const classification =
+          await transaction.itemClassification.findUnique({
+            where: {
+              itemId_categoryId: {
+                itemId: item.id,
+                categoryId: category.id,
+              },
+            },
+            select: { id: true },
+          });
+
+        if (!classification) {
+          await transaction.itemClassification.create({
+            data: {
+              itemId: item.id,
+              categoryId: category.id,
+            },
+          });
+          changed = true;
+        }
+
+        if (changed) {
+          updated++;
+        } else {
+          ignored++;
+        }
+
+        continue;
+      }
+
+      await transaction.itemClassification.create({
+        data: {
+          itemId: item.id,
+          categoryId: category.id,
+        },
+      });
+    }
+
+    return {
+      created,
+      updated,
+      ignored,
+      missingCategories,
+    };
+  });
+}

@@ -8,6 +8,7 @@ import {
   editGroup,
   editItem,
   getKnowledgeBySubtopic,
+  importItems,
   removeCategory,
   removeClassification,
   removeGroup,
@@ -46,6 +47,12 @@ interface ItemBody {
 interface ClassificationBody {
   itemId?: unknown;
   categoryId?: unknown;
+}
+
+interface ImportBody {
+  subtopicId?: unknown;
+  groupId?: unknown;
+  items?: unknown;
 }
 
 function parsePositiveInteger(value: string | undefined) {
@@ -365,4 +372,65 @@ export async function getSubtopicKnowledge(
 
   const knowledge = await getKnowledgeBySubtopic(subtopicId);
   response.status(200).json(knowledge);
+}
+
+export async function importKnowledgeItemsBulk(
+  request: Request<Record<string, never>, unknown, ImportBody>,
+  response: Response,
+) {
+  const { subtopicId, groupId, items } = request.body;
+
+  if (!isPositiveInteger(subtopicId) || !isPositiveInteger(groupId)) {
+    response.status(400).json({
+      message: "Os IDs do subtópico e do grupo são inválidos.",
+    });
+    return;
+  }
+
+  if (!Array.isArray(items)) {
+    response.status(400).json({ message: "Os itens da importação são inválidos." });
+    return;
+  }
+
+  const validItems: Array<{
+    line: number;
+    text: string;
+    categoryName: string;
+    reference?: string | null;
+  }> = [];
+
+  for (const item of items) {
+    if (typeof item !== "object" || item === null) {
+      response.status(400).json({ message: "Uma linha da importação é inválida." });
+      return;
+    }
+
+    const value = item as Record<string, unknown>;
+
+    if (
+      typeof value.line !== "number" ||
+      !Number.isInteger(value.line) ||
+      value.line <= 0 ||
+      typeof value.text !== "string" ||
+      typeof value.categoryName !== "string" ||
+      !isOptionalText(value.reference)
+    ) {
+      response.status(400).json({ message: "Uma linha da importação é inválida." });
+      return;
+    }
+
+    validItems.push({
+      line: value.line,
+      text: value.text,
+      categoryName: value.categoryName,
+      reference: value.reference as string | null | undefined,
+    });
+  }
+
+  const report = await importItems({
+    subtopicId,
+    groupId,
+    items: validItems,
+  });
+  response.status(200).json(report);
 }
