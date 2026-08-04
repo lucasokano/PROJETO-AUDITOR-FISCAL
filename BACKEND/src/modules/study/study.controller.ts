@@ -780,10 +780,24 @@ export async function listDueReviewStatements(
 ) {
   const limitParam = request.query.limit;
 
-  const limit =
-    typeof limitParam === "string"
-      ? Number(limitParam)
-      : 30;
+  if (
+    limitParam !== undefined &&
+    (
+      typeof limitParam !== "string" ||
+      !Number.isInteger(Number(limitParam))
+    )
+  ) {
+    response.status(400).json({
+      message:
+        "O limite deve ser um número inteiro.",
+    });
+
+    return;
+  }
+
+  const limit = limitParam === undefined
+    ? 30
+    : Number(limitParam);
 
   const statements =
     await getDueReviewStatements(limit);

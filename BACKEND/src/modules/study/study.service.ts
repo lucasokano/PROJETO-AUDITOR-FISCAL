@@ -657,7 +657,10 @@ export async function registerAnswer(
 export async function getDueReviewStatements(
   limit = 30,
 ) {
-  if (limit <= 0) {
+  if (
+    !Number.isInteger(limit) ||
+    limit <= 0
+  ) {
     throw new AppError(
       "O limite deve ser maior que zero.",
       400,

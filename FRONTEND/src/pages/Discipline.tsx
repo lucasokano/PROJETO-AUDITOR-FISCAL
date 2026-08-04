@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -61,10 +62,25 @@ export function Discipline() {
     string | null
   >(null);
 
+  const [answerError, setAnswerError] =
+    useState<string | null>(null);
+
+  const [answeringStatementId, setAnsweringStatementId] =
+    useState<number | null>(null);
+
+  const answerInFlightRef = useRef(false);
+  const activeSubtopicIdRef = useRef<
+    number | null
+  >(subtopic?.id ?? null);
+
 useEffect(() => {
+  activeSubtopicIdRef.current =
+    subtopic?.id ?? null;
+
   setAnswers([]);
   setStatements([]);
   setError(null);
+  setAnswerError(null);
 
   if (!subtopic) {
     setIsLoading(false);
@@ -146,11 +162,26 @@ useEffect(() => {
   statement: PublicStatement,
   selectedAnswer: boolean,
 ) {
+  if (answerInFlightRef.current) {
+    return;
+  }
+
   try {
+    answerInFlightRef.current = true;
+    setAnsweringStatementId(statement.id);
+    setAnswerError(null);
+
     const result = await registerAnswer(
       statement.id,
       selectedAnswer,
     );
+
+    if (
+      activeSubtopicIdRef.current !==
+      statement.subtopicId
+    ) {
+      return;
+    }
 
     setAnswers((current) => {
       const alreadyAnswered =
@@ -173,13 +204,21 @@ useEffect(() => {
         },
       ];
     });
-  } catch (error) {
-    console.error(error);
+  } catch (requestError) {
+    setAnswerError(
+      requestError instanceof Error
+        ? requestError.message
+        : "Erro ao registrar resposta.",
+    );
+  } finally {
+    answerInFlightRef.current = false;
+    setAnsweringStatementId(null);
   }
 }
 
   function restartSubtopic() {
     setAnswers([]);
+    setAnswerError(null);
   }
 
   if (isStructureLoading) {
@@ -252,6 +291,12 @@ useEffect(() => {
                 </div>
               )}
 
+              {answerError && (
+                <div className="review-error">
+                  {answerError}
+                </div>
+              )}
+
               {!isLoading &&
                 !error &&
                 subtopic &&
@@ -269,6 +314,9 @@ useEffect(() => {
                     <StatementCard
                       key={statement.id}
                       text={statement.text}
+                      disabled={
+                        answeringStatementId !== null
+                      }
                       onAnswer={(answer) =>
                         handleAnswer(
                           statement,

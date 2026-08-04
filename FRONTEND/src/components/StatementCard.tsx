@@ -2,11 +2,13 @@ import { Check, X } from "lucide-react";
 
 interface StatementCardProps {
   text: string;
+  disabled?: boolean;
   onAnswer: (answer: boolean) => void;
 }
 
 export function StatementCard({
   text,
+  disabled = false,
   onAnswer,
 }: StatementCardProps) {
   return (
@@ -19,6 +21,7 @@ export function StatementCard({
         <button
           type="button"
           className="answer-button answer-true"
+          disabled={disabled}
           onClick={() => onAnswer(true)}
           aria-label="Marcar como verdadeiro"
           title="Verdadeiro"
@@ -31,6 +34,7 @@ export function StatementCard({
         <button
           type="button"
           className="answer-button answer-false"
+          disabled={disabled}
           onClick={() => onAnswer(false)}
           aria-label="Marcar como falso"
           title="Falso"
