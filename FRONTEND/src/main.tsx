@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 
 import App from "./App";
 import { StudyProvider } from "./contexts/StudyContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 import "./index.css";
 
@@ -17,8 +18,10 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <StudyProvider>
-      <App />
-    </StudyProvider>
+    <ThemeProvider>
+      <StudyProvider>
+        <App />
+      </StudyProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

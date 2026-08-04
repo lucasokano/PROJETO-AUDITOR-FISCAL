@@ -824,7 +824,7 @@ export function AdminStatements() {
       )}
 
       {formMode && (
-        <section className="statement-editor">
+        <section className={`statement-editor ${formMode === "bulk" ? "statement-editor-modal" : ""}`}>
           <div className="statement-editor-header">
             <div>
               <h3>

@@ -1,0 +1,47 @@
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+
+/* Compatibility layer while legacy page markup adopts the UI primitives. */
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--color-background); color: var(--color-text); }
+.sidebar { width: var(--sidebar-width); background: var(--color-background-subtle); border-color: var(--color-border); }
+.sidebar-closed { width: 0; }.sidebar-title { display: none; }
+.sidebar-navigation { width: var(--sidebar-width); padding-top: var(--space-4); scrollbar-color: var(--color-border-strong) transparent; }
+.sidebar-admin-section { width: var(--sidebar-width); border-color: var(--color-border); }
+.sidebar-home-button, .discipline-button, .topic-button { border-radius: var(--radius-sm); color: var(--color-text-secondary); transition: background var(--transition), color var(--transition); }
+.sidebar-home-button:hover, .discipline-button:hover, .topic-button:hover { background: var(--color-surface-hover); color: var(--color-text); }
+.sidebar-item-active, .discipline-button-active, .topic-button-active { background: var(--color-primary-soft); color: var(--color-primary-hover); }
+.subtopic-menu { background: var(--color-surface); border-color: var(--color-border); }
+.content { width: 100%; background: var(--color-background); }
+.page, .admin-structure-page { width: 100%; max-width: 100%; }
+
+:where(.home-panel, .home-review-card, .performance-panel, .statements-table, .review-card, .review-result, .review-empty, .exercise-selection-panel, .exercise-card, .admin-create-card, .admin-manager-section, .statement-editor, .statement-filters, .statement-list-section, .admin-dashboard-card, .knowledge-panel, .knowledge-structure-panel) {
+  border-color: var(--color-border); background: var(--color-surface); box-shadow: var(--shadow-sm); border-radius: var(--radius);
+}
+:where(.home-heading, .exercise-session-heading, .knowledge-admin-heading, .admin-dashboard-heading, .admin-structure-header, .statements-header) p { color: var(--color-text-secondary); }
+:where(.home-eyebrow, .review-eyebrow, .exercise-session-heading > span, .admin-dashboard-eyebrow, .admin-structure-header > span, .knowledge-admin-heading > div > span, .statements-header > div > span) { color: var(--color-primary-hover); }
+
+:where(.home-review-button, .review-primary-button, .exercise-primary-button, .admin-submit-button, .admin-create-card > button, .restart-button, .knowledge-form-actions button:first-child, .knowledge-toolbar-actions > button:first-child) {
+  border-color: transparent; background: var(--color-primary); color: var(--color-on-primary);
+}
+:where(.home-review-button, .review-primary-button, .exercise-primary-button, .admin-submit-button, .admin-create-card > button, .restart-button, .knowledge-form-actions button:first-child, .knowledge-toolbar-actions > button:first-child):hover:not(:disabled) { background: var(--color-primary-hover); }
+:where(.secondary-button, .review-exit-button, .knowledge-secondary-button, .text-button, .icon-button) { border-color: var(--color-border); background: var(--color-surface-elevated); color: var(--color-text); }
+
+.forecast-track, .discipline-progress-track, .performance-progress, .review-progress-track { background: var(--color-surface-hover); }
+.forecast-fill, .discipline-progress-value, .performance-progress-bar, .review-progress-fill { background: var(--color-primary); }
+.discipline-progress-color-1, .discipline-progress-color-2, .discipline-progress-color-3, .discipline-progress-color-4, .discipline-progress-color-5, .discipline-progress-color-6 { background: var(--color-primary); }
+.home-review-card { border-color: var(--color-primary-border); background: linear-gradient(135deg, var(--color-primary-soft), var(--color-surface) 62%); }
+
+.review-page, .exercise-session-page { width: min(900px, 100%); margin-inline: auto; }
+.review-card, .exercise-card { min-height: 340px; display: flex; flex-direction: column; justify-content: center; }
+.exercise-option { border-color: var(--color-border); background: var(--color-background-subtle); }.exercise-option:hover { border-color: var(--color-primary-border); background: var(--color-surface-hover); }.exercise-option-selected { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.exercise-feedback-correct { border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-border)); }.exercise-feedback-incorrect, .review-error { border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border)); }
+
+.admin-dashboard-card:hover { border-color: var(--color-primary-border); background: var(--color-surface-elevated); transform: translateY(-2px); }.admin-dashboard-card-icon { background: var(--color-primary-soft); color: var(--color-primary-hover); }.admin-dashboard-card-action { color: var(--color-primary-hover); }
+.knowledge-admin-page { display: grid; gap: var(--space-5); }.knowledge-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }.knowledge-toolbar-actions button { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }.knowledge-item-editor { margin-bottom: var(--space-4); border: 1px solid var(--color-primary-border); border-radius: var(--radius); background: var(--color-background-subtle); }
+.knowledge-table-wrap, .knowledge-list-row, .knowledge-category-row { border-color: var(--color-border); }.knowledge-table th, .knowledge-table td { border-color: var(--color-border); }.knowledge-table-row-active, .knowledge-list-row-active { background: var(--color-primary-soft); }.knowledge-status-active { color: var(--color-primary-hover); }
+.knowledge-modal-backdrop { background: rgb(0 0 0 / 68%); backdrop-filter: blur(5px); }.knowledge-modal { border-color: var(--color-border-strong); background: var(--color-surface-elevated); box-shadow: var(--shadow-lg); }
+
+.statements-page { display: grid; gap: var(--space-5); }.statements-header { order: 1; }.form-message { order: 2; }.statement-filters { order: 3; }.statement-list-section { order: 4; }.statement-editor { order: 5; }
+.statement-editor-modal { position: fixed; inset: 0; z-index: 100; overflow: auto; width: 100%; padding: clamp(24px, 6vh, 64px) max(24px, calc((100vw - 760px) / 2)); border: 0; border-radius: 0; background: rgb(0 0 0 / 72%); backdrop-filter: blur(5px); }.statement-editor-modal > * { padding-inline: var(--space-5); background: var(--color-surface-elevated); }.statement-editor-modal .statement-editor-header { padding-top: var(--space-5); border: 1px solid var(--color-border-strong); border-bottom: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }.statement-editor-modal .admin-form { padding-bottom: var(--space-5); border: 1px solid var(--color-border-strong); border-top: 0; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.statement-card { border-color: var(--color-border); background: var(--color-surface); }.statement-card:hover { border-color: var(--color-border-strong); }.answer-badge { background: var(--color-surface-hover); }
+
+@media (max-width: 980px) { .sidebar { position: sticky; top: 0; }.ui-page-header, .knowledge-toolbar-actions { align-items: stretch; }.knowledge-toolbar-actions { width: 100%; }.knowledge-search { flex: 1; }.review-page, .exercise-session-page { width: 100%; } }

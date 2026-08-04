@@ -91,6 +91,7 @@ export function AdminKnowledge() {
   const [message, setMessage] = useState<Message | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isItemEditorOpen, setIsItemEditorOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importGroupId, setImportGroupId] = useState("");
   const [importText, setImportText] = useState("");
@@ -305,6 +306,7 @@ export function AdminKnowledge() {
       explanation: item.explanation ?? "",
       reference: item.reference ?? "",
     });
+    setIsItemEditorOpen(true);
   }
 
   async function removeItem(item: KnowledgeItem, event: MouseEvent) {
@@ -413,9 +415,6 @@ export function AdminKnowledge() {
           <h2>Conhecimento estruturado</h2>
           <p>Gerencie dimensões, categorias, itens e suas classificações.</p>
         </div>
-        <button type="button" onClick={openImport} disabled={!subtopicId || !knowledge?.groups.length}>
-          <Upload size={17} /> Importar
-        </button>
       </header>
 
       {message && <div className={`knowledge-message knowledge-message-${message.type}`}>{message.text}</div>}
@@ -521,14 +520,18 @@ export function AdminKnowledge() {
           <section className="knowledge-panel knowledge-items-panel">
             <div className="knowledge-items-toolbar">
               <div><span>Conteúdo</span><h3>Itens de conhecimento</h3></div>
-              <label className="knowledge-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por texto" /></label>
+              <div className="knowledge-toolbar-actions">
+                <button type="button" onClick={() => { setItemDraft(emptyItemDraft); setIsItemEditorOpen(true); }}><Plus size={16} /> Novo item</button>
+                <button type="button" className="knowledge-secondary-button" onClick={openImport}><Upload size={16} /> Importar</button>
+                <label className="knowledge-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar itens" aria-label="Pesquisar itens" /></label>
+              </div>
             </div>
-            <form className="knowledge-item-form" onSubmit={handleItemSubmit}>
+            {isItemEditorOpen && <form className="knowledge-item-form knowledge-item-editor" onSubmit={handleItemSubmit}>
               <label><span>Texto</span><textarea value={itemDraft.text} onChange={(event) => setItemDraft({ ...itemDraft, text: event.target.value })} rows={2} maxLength={2000} required /></label>
               <label><span>Explicação</span><textarea value={itemDraft.explanation} onChange={(event) => setItemDraft({ ...itemDraft, explanation: event.target.value })} rows={2} /></label>
               <label><span>Referência</span><input value={itemDraft.reference} onChange={(event) => setItemDraft({ ...itemDraft, reference: event.target.value })} /></label>
-              <div className="knowledge-form-actions"><button type="submit" disabled={isSaving}><Plus size={15} /> {itemDraft.id ? "Salvar item" : "Criar item"}</button>{itemDraft.id && <button type="button" className="knowledge-secondary-button" onClick={() => setItemDraft(emptyItemDraft)}>Cancelar</button>}</div>
-            </form>
+              <div className="knowledge-form-actions"><button type="submit" disabled={isSaving}><Plus size={15} /> {itemDraft.id ? "Salvar item" : "Criar item"}</button><button type="button" className="knowledge-secondary-button" onClick={() => { setItemDraft(emptyItemDraft); setIsItemEditorOpen(false); }}>Cancelar</button></div>
+            </form>}
             <div className="knowledge-table-wrap">
               <table className="knowledge-table">
                 <thead><tr><th>Texto</th><th>Referência</th><th>Status</th><th>Classificações</th><th>Ações</th></tr></thead>

@@ -1,0 +1,2 @@
+.ui-table-wrap { overflow: auto; border: 1px solid var(--color-border); border-radius: var(--radius); }
+.ui-table { width: 100%; border-collapse: collapse; background: var(--color-surface); }.ui-table th { color: var(--color-text-secondary); font-size: .75rem; letter-spacing: .05em; text-align: left; text-transform: uppercase; }.ui-table th, .ui-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }.ui-table tr:last-child td { border-bottom: 0; }.ui-table tbody tr:hover { background: var(--color-surface-hover); }

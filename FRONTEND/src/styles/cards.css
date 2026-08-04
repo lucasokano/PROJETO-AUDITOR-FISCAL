@@ -1,0 +1,7 @@
+.ui-card, .ui-panel { border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.ui-card { padding: var(--space-5); }.ui-panel { padding: var(--space-4); }
+.ui-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 var(--space-2); border-radius: 999px; background: var(--color-surface-hover); color: var(--color-text-secondary); font-size: .75rem; font-weight: 750; }
+.ui-badge-accent { background: var(--color-primary-soft); color: var(--color-primary-hover); }.ui-badge-success { color: var(--color-success); }.ui-badge-danger { color: var(--color-danger); }
+.ui-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: var(--space-5); background: rgb(0 0 0 / 66%); backdrop-filter: blur(5px); }
+.ui-modal { width: min(680px, 100%); max-height: calc(100vh - 48px); overflow: auto; border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface-elevated); box-shadow: var(--shadow-lg); }
+.ui-modal > header, .ui-modal > footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-5); }.ui-modal > header { border-bottom: 1px solid var(--color-border); }.ui-modal > header h2 { margin: 0; }.ui-modal > footer { justify-content: flex-end; border-top: 1px solid var(--color-border); }.ui-modal-body { padding: var(--space-5); }
