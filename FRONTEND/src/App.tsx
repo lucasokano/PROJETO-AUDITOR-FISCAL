@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
+import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminStatements } from "./pages/AdminStatements";
 import { AdminStructure } from "./pages/AdminStructure";
 import { Discipline } from "./pages/Discipline";
@@ -24,6 +25,11 @@ function App() {
           <Route
             path="/revisao"
             element={<Review />}
+          />
+
+          <Route
+            path="/admin"
+            element={<AdminDashboard />}
           />
 
           <Route
