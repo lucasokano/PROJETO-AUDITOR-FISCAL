@@ -8,6 +8,9 @@ import type {
   Statement,
   UpdateStatementInput,
   DisciplineProgress,
+  PublicStatement,
+  RegisterAnswerResponse,
+  StudyDashboard,
 } from "../types/study";
 
 interface DisciplineResponse {
@@ -38,14 +41,6 @@ interface StatementResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-interface AnswerAttemptResponse {
-  id: number;
-  statementId: number;
-  selectedAnswer: boolean;
-  isCorrect: boolean;
-  answeredAt: string;
 }
 
 const API_URL =
@@ -85,6 +80,12 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
+export function getDashboard() {
+  return request<StudyDashboard>(
+    "/study/dashboard",
+  );
+}
+
 export function getStudyStructure() {
   return request<Discipline[]>(
     "/study/structure",
@@ -100,7 +101,7 @@ export function getAllStatements() {
 export function getStatementsBySubtopic(
   subtopicId: number,
 ) {
-  return request<Statement[]>(
+  return request<PublicStatement[]>(
     `/study/subtopics/${subtopicId}/statements`,
   );
 }
@@ -268,7 +269,7 @@ export function registerAnswer(
   statementId: number,
   selectedAnswer: boolean,
 ) {
-  return request<AnswerAttemptResponse>(
+  return request<RegisterAnswerResponse>(
     "/study/answer",
     {
       method: "POST",
@@ -286,3 +287,10 @@ export function getDisciplineProgress() {
   );
 }
 
+export function getDueReviewStatements(
+  limit = 30,
+) {
+  return request<PublicStatement[]>(
+    `/study/review?limit=${limit}`,
+  );
+}

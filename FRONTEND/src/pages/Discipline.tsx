@@ -12,7 +12,7 @@ import {
   getSubtopicStatements,
   registerAnswer,
 } from "../services/studyApi";
-import type { Statement } from "../types/study";
+import type { PublicStatement } from "../types/study";
 
 interface AnswerResult {
   statementId: number;
@@ -49,7 +49,7 @@ export function Discipline() {
   );
 
   const [statements, setStatements] =
-    useState<Statement[]>([]);
+    useState<PublicStatement[]>([]);
 
   const [answers, setAnswers] =
     useState<AnswerResult[]>([]);
@@ -143,11 +143,11 @@ useEffect(() => {
       : 0;
 
   async function handleAnswer(
-  statement: Statement,
+  statement: PublicStatement,
   selectedAnswer: boolean,
 ) {
   try {
-    await registerAnswer(
+    const result = await registerAnswer(
       statement.id,
       selectedAnswer,
     );
@@ -169,8 +169,7 @@ useEffect(() => {
         {
           statementId: statement.id,
           isCorrect:
-            selectedAnswer ===
-            statement.correctAnswer,
+            result.attempt.isCorrect,
         },
       ];
     });

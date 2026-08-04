@@ -9,6 +9,7 @@ import { AdminStatements } from "./pages/AdminStatements";
 import { AdminStructure } from "./pages/AdminStructure";
 import { Discipline } from "./pages/Discipline";
 import { Home } from "./pages/Home";
+import { Review } from "./pages/Review";
 
 function App() {
   return (
@@ -21,14 +22,19 @@ function App() {
           />
 
           <Route
+            path="/revisao"
+            element={<Review />}
+          />
+
+          <Route
             path="/admin/statements"
             element={<AdminStatements />}
           />
 
           <Route
-  path="/admin/structure"
-  element={<AdminStructure />}
-/>
+            path="/admin/structure"
+            element={<AdminStructure />}
+          />
 
           <Route
             path="/disciplina/:disciplineId/topico/:topicId"

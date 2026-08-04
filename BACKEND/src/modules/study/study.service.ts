@@ -31,6 +31,7 @@ import {
   findDueReviewStatements,
   findDisciplineProgress,
   countDueReviewStatements,
+  findReviewForecast,
 } from "./study.repository.js";
 
 interface BulkStatementInput {
@@ -612,16 +613,45 @@ export async function registerAnswer(
     );
   }
 
+  if (!statement.isActive) {
+    throw new AppError(
+      "A afirmação está inativa.",
+      409,
+    );
+  }
+
   const isCorrect =
     statement.correctAnswer ===
     input.selectedAnswer;
 
-  return createAnswerAttempt({
+  const result = await createAnswerAttempt({
     statementId: input.statementId,
     selectedAnswer:
       input.selectedAnswer,
     isCorrect,
   });
+
+  return {
+    attempt: result.attempt,
+    progress: {
+      statementId:
+        result.progress.statementId,
+      totalAttempts:
+        result.progress.totalAttempts,
+      correctAttempts:
+        result.progress.correctAttempts,
+      incorrectAttempts:
+        result.progress.incorrectAttempts,
+      consecutiveCorrect:
+        result.progress.consecutiveCorrect,
+      lastResult:
+        result.progress.lastResult,
+      lastAnsweredAt:
+        result.progress.lastAnsweredAt,
+      nextReviewAt:
+        result.progress.nextReviewAt,
+    },
+  };
 }
 
 export async function getDueReviewStatements(
@@ -666,13 +696,92 @@ export async function getStudyDashboard() {
   const [
     dueReviews,
     disciplines,
+    forecast,
   ] = await Promise.all([
     countDueReviewStatements(),
     getDisciplineProgress(),
+    getReviewForecast(7),
   ]);
 
   return {
     dueReviews,
     disciplines,
+    forecast,
   };
+}
+
+export async function getReviewForecast(
+  days = 7,
+) {
+  const today = new Date();
+
+  today.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(today);
+
+  endDate.setDate(
+    endDate.getDate() + days - 1,
+  );
+
+  endDate.setHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
+  const reviews =
+    await findReviewForecast(endDate);
+
+  const forecast = Array.from(
+    { length: days },
+    (_, index) => {
+      const date = new Date(today);
+
+      date.setDate(
+        today.getDate() + index,
+      );
+
+      return {
+        date: date
+          .toISOString()
+          .slice(0, 10),
+        count: 0,
+      };
+    },
+  );
+
+  for (const review of reviews) {
+    if (!review.nextReviewAt) {
+      continue;
+    }
+
+    const reviewDate = new Date(
+      review.nextReviewAt,
+    );
+
+    reviewDate.setHours(
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const diff = Math.floor(
+      (reviewDate.getTime() -
+        today.getTime()) /
+        86400000,
+    );
+
+    if (diff <= 0) {
+      forecast[0]!.count++;
+      continue;
+    }
+
+    if (diff < days) {
+      forecast[diff]!.count++;
+    }
+  }
+
+  return forecast;
 }

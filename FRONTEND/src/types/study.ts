@@ -1,3 +1,14 @@
+export interface ForecastDay {
+  date: string;
+  count: number;
+}
+
+export interface StudyDashboard {
+  dueReviews: number;
+  disciplines: DisciplineProgress[];
+  forecast: ForecastDay[];
+}
+
 export interface DisciplineProgress {
   disciplineId: number;
   name: string;
@@ -47,6 +58,33 @@ export interface Statement {
     };
   };
 }
+
+export interface PublicStatement {
+  id: number;
+  subtopicId: number;
+  text: string;
+}
+
+export interface RegisterAnswerResponse {
+  attempt: {
+    id: number;
+    statementId: number;
+    selectedAnswer: boolean;
+    isCorrect: boolean;
+    answeredAt: string;
+  };
+  progress: {
+    statementId: number;
+    totalAttempts: number;
+    correctAttempts: number;
+    incorrectAttempts: number;
+    consecutiveCorrect: number;
+    lastResult: boolean | null;
+    lastAnsweredAt: string | null;
+    nextReviewAt: string | null;
+  };
+}
+
 export interface CreateStatementInput {
   subtopicId: number;
   text: string;

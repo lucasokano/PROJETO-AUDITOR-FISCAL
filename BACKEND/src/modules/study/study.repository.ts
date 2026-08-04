@@ -78,6 +78,12 @@ export function findStatementsBySubtopicId(
   return prisma.statement.findMany({
     where: {
       subtopicId,
+      isActive: true,
+    },
+    select: {
+      id: true,
+      subtopicId: true,
+      text: true,
     },
     orderBy: {
       id: "asc",
@@ -577,30 +583,32 @@ export function getAnswerHistory(
 export function findDueReviewStatements(
   limit: number,
 ) {
+  const endOfToday = new Date();
+
+  endOfToday.setHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
   return prisma.statement.findMany({
     where: {
       isActive: true,
+
       progress: {
         is: {
           nextReviewAt: {
-            lte: new Date(),
+            lte: endOfToday,
           },
         },
       },
     },
 
-    include: {
-      progress: true,
-
-      subtopic: {
-        include: {
-          topic: {
-            include: {
-              discipline: true,
-            },
-          },
-        },
-      },
+    select: {
+      id: true,
+      subtopicId: true,
+      text: true,
     },
 
     orderBy: {
@@ -656,15 +664,49 @@ export function findDisciplineProgress() {
 }
 
 export function countDueReviewStatements() {
+  const endOfToday = new Date();
+
+  endOfToday.setHours(
+    23,
+    59,
+    59,
+    999,
+  );
+
   return prisma.statementProgress.count({
     where: {
       nextReviewAt: {
-        lte: new Date(),
+        lte: endOfToday,
       },
 
       statement: {
         isActive: true,
       },
+    },
+  });
+}
+
+export function findReviewForecast(
+  endDate: Date,
+) {
+  return prisma.statementProgress.findMany({
+    where: {
+      nextReviewAt: {
+        not: null,
+        lte: endDate,
+      },
+
+      statement: {
+        isActive: true,
+      },
+    },
+
+    select: {
+      nextReviewAt: true,
+    },
+
+    orderBy: {
+      nextReviewAt: "asc",
     },
   });
 }
