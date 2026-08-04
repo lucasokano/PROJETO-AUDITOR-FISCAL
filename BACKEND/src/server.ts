@@ -5,6 +5,7 @@ import express from "express";
 
 import { prisma } from "./config/prisma.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import { knowledgeRoutes } from "./modules/knowledge/knowledge.routes.js";
 import { studyRoutes } from "./modules/study/study.routes.js";
 
 const app = express();
@@ -30,6 +31,7 @@ app.get("/api/health", async (_request, response) => {
 });
 
 app.use("/api/study", studyRoutes);
+app.use("/api/knowledge", knowledgeRoutes);
 
 app.use((_request, response) => {
   response.status(404).json({
