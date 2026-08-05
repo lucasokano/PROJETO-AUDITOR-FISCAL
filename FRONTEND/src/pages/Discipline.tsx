@@ -5,15 +5,17 @@ import {
   useState,
 } from "react";
 
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { StatementCard } from "../components/StatementCard";
 import { useStudy } from "../contexts/StudyContext";
+import { getExerciseGroups } from "../services/exerciseApi";
 import {
   getSubtopicStatements,
   registerAnswer,
 } from "../services/studyApi";
 import type { PublicStatement } from "../types/study";
+import type { ExerciseGroup } from "../types/exercise";
 
 interface AnswerResult {
   statementId: number;
@@ -21,6 +23,7 @@ interface AnswerResult {
 }
 
 export function Discipline() {
+  const navigate = useNavigate();
   const {
     disciplineId,
     topicId,
@@ -67,6 +70,12 @@ export function Discipline() {
 
   const [answeringStatementId, setAnsweringStatementId] =
     useState<number | null>(null);
+
+  const [exerciseGroups, setExerciseGroups] =
+    useState<ExerciseGroup[]>([]);
+
+  const [areExerciseGroupsLoading, setAreExerciseGroupsLoading] =
+    useState(false);
 
   const answerInFlightRef = useRef(false);
   const activeSubtopicIdRef = useRef<
@@ -124,6 +133,43 @@ useEffect(() => {
     cancelled = true;
   };
 }, [subtopic]);
+
+  useEffect(() => {
+    setExerciseGroups([]);
+
+    if (!subtopic) {
+      setAreExerciseGroupsLoading(false);
+      return;
+    }
+
+    const currentSubtopicId = subtopic.id;
+    let cancelled = false;
+
+    async function loadExerciseGroups() {
+      try {
+        setAreExerciseGroupsLoading(true);
+        const result = await getExerciseGroups(currentSubtopicId);
+
+        if (!cancelled) {
+          setExerciseGroups(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setExerciseGroups([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setAreExerciseGroupsLoading(false);
+        }
+      }
+    }
+
+    void loadExerciseGroups();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [subtopic]);
 
   const answeredIds = useMemo(
     () =>
@@ -262,6 +308,37 @@ useEffect(() => {
       </div>
 
       <h2>{subtopic?.name ?? topic.name}</h2>
+
+      {subtopic && (
+        <section className="structured-exercise-section">
+          <div>
+            <span className="structured-exercise-eyebrow">
+              Exercícios estruturados
+            </span>
+            <p>
+              {areExerciseGroupsLoading
+                ? "Consultando conteúdo disponível..."
+                : exerciseGroups.length > 0
+                  ? `${exerciseGroups.length} ${exerciseGroups.length === 1 ? "grupo disponível" : "grupos disponíveis"}`
+                  : "Nenhum grupo de exercícios disponível neste subtópico."}
+            </p>
+          </div>
+
+          {exerciseGroups.length > 0 && (
+            <button
+              type="button"
+              className="exercise-primary-button"
+              onClick={() =>
+                navigate(
+                  `/disciplina/${disciplineId}/topico/${topicId}/subtopico/${subtopicId}/exercicios`,
+                )
+              }
+            >
+              Estudar conteúdo estruturado
+            </button>
+          )}
+        </section>
+      )}
 
       <div className="discipline-content">
         <div className="statements-area">

@@ -1,146 +1,56 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../../errors/AppError.js";
-import {
-  findAvailableGroups,
-  findExerciseSource,
-} from "./exercise.repository.js";
-import {
-  consumePendingExercise,
-  getLastItemId,
-  savePendingExercise,
-  setLastItemId,
-} from "./exercise.store.js";
-import {
-  ExerciseType,
-  type ExerciseOption,
-  type ExerciseResult,
-  type PresentedExercise,
-  type SubmittedAnswer,
-} from "./exercise.types.js";
+import { getEligibleTypes } from "./exercise.eligibility.js";
+import { gradePendingExercise } from "./exercise.grader.js";
+import { findAvailableGroups, findExerciseSource } from "./exercise.repository.js";
+import { consumePendingExercise, EXERCISE_TTL_MS, getLastItemId, savePendingExercise, setLastItemId } from "./exercise.store.js";
+import { ExerciseType, type ExerciseResult, type ExerciseSource, type GeneratedExercise, type PresentedExercise, type SubmittedAnswer } from "./exercise.types.js";
+import { generateClassifyBatch } from "./generators/classify-batch.generator.js";
+import { generateClassifyOne } from "./generators/classify-one.generator.js";
+import { generateMultipleSelect } from "./generators/multiple-select.generator.js";
+import { generateSingleChoice } from "./generators/single-choice.generator.js";
+import { generateTrueFalse } from "./generators/true-false.generator.js";
 
-function shuffle<T>(values: T[]) {
-  const shuffled = [...values];
+let nextTrueFalseValue = true;
 
-  for (let index = shuffled.length - 1; index > 0; index--) {
-    const target = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[target]] = [
-      shuffled[target]!,
-      shuffled[index]!,
-    ];
-  }
-
-  return shuffled;
+export async function getAvailableGroups(subtopicId: number) {
+  const groups = await findAvailableGroups(subtopicId);
+  const availability = await Promise.all(groups.map(async (group) => {
+    const source = await findExerciseSource(subtopicId, group.id);
+    return { ...group, eligibleTypes: source ? getEligibleTypes(source) : [] };
+  }));
+  return availability.filter((group) => group.eligibleTypes.length > 0);
 }
 
-export function getAvailableGroups(subtopicId: number) {
-  return findAvailableGroups(subtopicId);
+function generateByType(type: ExerciseType, source: ExerciseSource, context: { exerciseId: string; subtopicId: number; expiresAt: number }): GeneratedExercise {
+  switch (type) {
+    case ExerciseType.CLASSIFY_ONE: return generateClassifyOne(source, { ...context, excludedItemId: getLastItemId(`${context.subtopicId}:${source.id}:${type}`) });
+    case ExerciseType.CLASSIFY_BATCH: return generateClassifyBatch(source, context);
+    case ExerciseType.TRUE_FALSE: {
+      const generated = generateTrueFalse(source, { ...context, forceTruth: nextTrueFalseValue });
+      nextTrueFalseValue = !nextTrueFalseValue;
+      return generated;
+    }
+    case ExerciseType.SINGLE_CHOICE: return generateSingleChoice(source, context);
+    case ExerciseType.MULTIPLE_SELECT: return generateMultipleSelect(source, context);
+    default: { const exhaustive: never = type; return exhaustive; }
+  }
 }
 
-export async function generateNextExercise(input: {
-  subtopicId: number;
-  groupId: number;
-}): Promise<PresentedExercise> {
-  const source = await findExerciseSource(
-    input.subtopicId,
-    input.groupId,
-  );
-
-  if (!source) {
-    throw new AppError(
-      "Grupo ativo não encontrado no subtópico informado.",
-      404,
-    );
-  }
-
-  if (source.categories.length === 0) {
-    throw new AppError(
-      "O grupo não possui categorias disponíveis.",
-      409,
-    );
-  }
-
-  const eligibleItems =
-    source.subtopic.knowledgeItems.filter(
-      (item) => item.classifications.length === 1,
-    );
-
-  if (eligibleItems.length === 0) {
-    throw new AppError(
-      "Não há itens ativos com uma classificação única neste grupo.",
-      409,
-    );
-  }
-
-  const scope = `${input.subtopicId}:${input.groupId}`;
-  const lastItemId = getLastItemId(scope);
-  const candidates = eligibleItems.length > 1
-    ? eligibleItems.filter((item) => item.id !== lastItemId)
-    : eligibleItems;
-  const item = candidates[
-    Math.floor(Math.random() * candidates.length)
-  ]!;
-  const correctCategory = item.classifications[0]!.category;
-  const options: ExerciseOption[] = shuffle(
-    source.categories.map((category) => ({
-      id: category.id,
-      label: category.name,
-    })),
-  );
+export async function generateNextExercise(input: { subtopicId: number; groupId: number; type?: ExerciseType }): Promise<PresentedExercise> {
+  const source = await findExerciseSource(input.subtopicId, input.groupId);
+  if (!source) throw new AppError("Grupo ativo não encontrado no subtópico informado.", 404);
+  const type = input.type ?? ExerciseType.CLASSIFY_ONE;
+  if (!getEligibleTypes(source).includes(type)) throw new AppError("O tipo de exercício não é elegível para este grupo.", 409);
   const exerciseId = randomUUID();
-
-  savePendingExercise(exerciseId, {
-    correctAnswer: {
-      id: correctCategory.id,
-      label: correctCategory.name,
-    },
-    optionIds: options.map((option) => option.id),
-    explanation: item.explanation,
-    reference: item.reference,
-  });
-  setLastItemId(scope, item.id);
-
-  return {
-    exerciseId,
-    type: ExerciseType.CLASSIFY_ONE,
-    payload: {
-      prompt: `${item.text} pertence a qual categoria?`,
-      itemText: item.text,
-      groupName: source.name,
-      instruction: source.instruction,
-      options,
-    },
-  };
+  const generated = generateByType(type, source, { exerciseId, subtopicId: input.subtopicId, expiresAt: Date.now() + EXERCISE_TTL_MS });
+  savePendingExercise(generated.pending);
+  if (type === ExerciseType.CLASSIFY_ONE) setLastItemId(`${input.subtopicId}:${input.groupId}:${type}`, generated.pending.knowledgeItemIds[0]!);
+  return generated.presented;
 }
 
-export function gradeExercise(
-  submission: SubmittedAnswer,
-): ExerciseResult {
-  const pending = consumePendingExercise(
-    submission.exerciseId,
-  );
-
-  if (!pending) {
-    throw new AppError(
-      "O exercício expirou ou já foi respondido.",
-      409,
-    );
-  }
-
-  if (!pending.optionIds.includes(submission.answer.categoryId)) {
-    throw new AppError(
-      "A categoria selecionada não pertence ao exercício.",
-      400,
-    );
-  }
-
-  return {
-    exerciseId: submission.exerciseId,
-    type: ExerciseType.CLASSIFY_ONE,
-    isCorrect:
-      submission.answer.categoryId ===
-      pending.correctAnswer.id,
-    correctAnswer: pending.correctAnswer,
-    explanation: pending.explanation,
-    reference: pending.reference,
-  };
+export function gradeExercise(submission: SubmittedAnswer): ExerciseResult {
+  const pending = consumePendingExercise(submission.exerciseId);
+  if (!pending) throw new AppError("O exercício expirou ou já foi respondido.", 409);
+  return gradePendingExercise(pending, submission);
 }

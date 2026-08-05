@@ -63,6 +63,11 @@ function App() {
             path="/disciplina/:disciplineId/topico/:topicId/subtopico/:subtopicId"
             element={<Discipline />}
           />
+
+          <Route
+            path="/disciplina/:disciplineId/topico/:topicId/subtopico/:subtopicId/exercicios"
+            element={<ExerciseSession />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>

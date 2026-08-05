@@ -1,4 +1,5 @@
 import type {
+  ExerciseType,
   ExerciseGroup,
   ExerciseResult,
   PresentedExercise,
@@ -40,9 +41,10 @@ export function getExerciseGroups(subtopicId: number) {
 export function getNextExercise(
   subtopicId: number,
   groupId: number,
+  type?: ExerciseType,
 ) {
   return request<PresentedExercise>(
-    `/exercises/next?subtopicId=${subtopicId}&groupId=${groupId}`,
+    `/exercises/next?subtopicId=${subtopicId}&groupId=${groupId}${type ? `&type=${type}` : ""}`,
   );
 }
 

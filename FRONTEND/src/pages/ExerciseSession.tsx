@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useParams } from "react-router-dom";
 import { ExerciseRenderer } from "../components/exercises/ExerciseRenderer";
 import { useStudy } from "../contexts/StudyContext";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../services/exerciseApi";
 import {
   ExerciseType,
+  type ExerciseAnswerPayload,
   type ExerciseGroup,
   type ExerciseResult,
   type PresentedExercise,
@@ -25,10 +27,33 @@ function getErrorMessage(error: unknown) {
 
 export function ExerciseSession() {
   const {
+    disciplineId: routeDisciplineId,
+    topicId: routeTopicId,
+    subtopicId: routeSubtopicId,
+  } = useParams();
+
+  const {
     disciplines,
+    findDiscipline,
+    findTopic,
+    findSubtopic,
     isLoading: isStructureLoading,
     error: structureError,
   } = useStudy();
+
+  const isContextualSession = Boolean(
+    routeDisciplineId && routeTopicId && routeSubtopicId,
+  );
+
+  const contextualDiscipline = isContextualSession
+    ? findDiscipline(routeDisciplineId)
+    : undefined;
+  const contextualTopic = isContextualSession
+    ? findTopic(routeDisciplineId, routeTopicId)
+    : undefined;
+  const contextualSubtopic = isContextualSession
+    ? findSubtopic(routeDisciplineId, routeTopicId, routeSubtopicId)
+    : undefined;
   const [disciplineId, setDisciplineId] = useState("");
   const [topicId, setTopicId] = useState("");
   const [subtopicId, setSubtopicId] = useState("");
@@ -38,8 +63,8 @@ export function ExerciseSession() {
     useState<PresentedExercise | null>(null);
   const [result, setResult] =
     useState<ExerciseResult | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] =
-    useState<number | null>(null);
+  const [exerciseType, setExerciseType] =
+    useState<ExerciseType>(ExerciseType.CLASSIFY_ONE);
   const [isLoadingGroups, setIsLoadingGroups] =
     useState(false);
   const [isLoadingExercise, setIsLoadingExercise] =
@@ -55,14 +80,17 @@ export function ExerciseSession() {
     (item) => item.id === Number(topicId),
   );
 
+  const effectiveSubtopicId = isContextualSession
+    ? String(contextualSubtopic?.id ?? "")
+    : subtopicId;
+
   useEffect(() => {
-    const numericSubtopicId = Number(subtopicId);
+    const numericSubtopicId = Number(effectiveSubtopicId);
 
     setGroups([]);
     setGroupId("");
     setExercise(null);
     setResult(null);
-    setSelectedCategoryId(null);
     setError(null);
 
     if (!numericSubtopicId) {
@@ -81,9 +109,19 @@ export function ExerciseSession() {
         if (!cancelled) {
           setGroups(availableGroups);
           setGroupId(
-            availableGroups[0]
+            availableGroups[0] &&
+              (!isContextualSession || availableGroups.length === 1)
               ? String(availableGroups[0].id)
               : "",
+          );
+          const automaticallySelectedGroup =
+            availableGroups[0] &&
+              (!isContextualSession || availableGroups.length === 1)
+              ? availableGroups[0]
+              : null;
+          setExerciseType(
+            automaticallySelectedGroup?.eligibleTypes[0] ??
+              ExerciseType.CLASSIFY_ONE,
           );
         }
       } catch (requestError) {
@@ -102,10 +140,14 @@ export function ExerciseSession() {
     return () => {
       cancelled = true;
     };
-  }, [subtopicId]);
+  }, [effectiveSubtopicId, isContextualSession]);
+
+  const selectedGroup = groups.find(
+    (group) => group.id === Number(groupId),
+  );
 
   async function loadNextExercise() {
-    const numericSubtopicId = Number(subtopicId);
+    const numericSubtopicId = Number(effectiveSubtopicId);
     const numericGroupId = Number(groupId);
 
     if (!numericSubtopicId || !numericGroupId) {
@@ -117,10 +159,10 @@ export function ExerciseSession() {
       setError(null);
       setExercise(null);
       setResult(null);
-      setSelectedCategoryId(null);
       const nextExercise = await getNextExercise(
         numericSubtopicId,
         numericGroupId,
+        exerciseType,
       );
       setExercise(nextExercise);
     } catch (requestError) {
@@ -130,10 +172,9 @@ export function ExerciseSession() {
     }
   }
 
-  async function submitAnswer() {
+  async function submitAnswer(answer: ExerciseAnswerPayload) {
     if (
       !exercise ||
-      selectedCategoryId === null ||
       submissionInFlight.current
     ) {
       return;
@@ -145,9 +186,9 @@ export function ExerciseSession() {
       setError(null);
       const exerciseResult = await submitExerciseAnswer({
         exerciseId: exercise.exerciseId,
-        type: ExerciseType.CLASSIFY_ONE,
-        answer: { categoryId: selectedCategoryId },
-      });
+        type: exercise.type,
+        answer,
+      } as Parameters<typeof submitExerciseAnswer>[0]);
       setResult(exerciseResult);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
@@ -162,7 +203,12 @@ export function ExerciseSession() {
       <header className="exercise-session-heading">
         <span>Sessão de exercícios</span>
         <h2>Classificação</h2>
-        <p>
+        {isContextualSession && (
+          <p>
+            {contextualDiscipline?.name} / {contextualTopic?.name} / {contextualSubtopic?.name}
+          </p>
+        )}
+        <p className={isContextualSession ? "exercise-free-description-hidden" : ""}>
           Escolha um subtópico e uma dimensão para gerar
           exercícios dinamicamente.
         </p>
@@ -174,7 +220,9 @@ export function ExerciseSession() {
         </div>
       )}
 
-      <section className="exercise-selection-panel">
+      <section className={`exercise-selection-panel ${isContextualSession ? "exercise-selection-contextual" : ""}`}>
+        {!isContextualSession && (
+          <>
         <label>
           <span>Disciplina</span>
           <select
@@ -232,16 +280,24 @@ export function ExerciseSession() {
           </select>
         </label>
 
-        <label>
+          </>
+        )}
+
+        {(!isContextualSession || groups.length > 1) && <label>
           <span>Grupo</span>
           <select
             value={groupId}
-            disabled={!subtopicId || isLoadingGroups}
+            disabled={!effectiveSubtopicId || isLoadingGroups}
             onChange={(event) => {
               setGroupId(event.target.value);
-              setExercise(null);
-              setResult(null);
-              setSelectedCategoryId(null);
+                setExercise(null);
+                setResult(null);
+                const nextGroup = groups.find(
+                  (group) => group.id === Number(event.target.value),
+                );
+                setExerciseType(
+                  nextGroup?.eligibleTypes[0] ?? ExerciseType.CLASSIFY_ONE,
+                );
             }}
           >
             <option value="">
@@ -253,9 +309,49 @@ export function ExerciseSession() {
               </option>
             ))}
           </select>
-        </label>
+        </label>}
 
-        <button
+        {isContextualSession && groups.length === 1 && (
+          <div className="exercise-selected-group">
+            <span>Grupo</span>
+            <strong>{groups[0]?.name}</strong>
+          </div>
+        )}
+
+        {isContextualSession && isLoadingGroups && (
+          <div className="exercise-selected-group">
+            <span>Grupos</span>
+            <strong>Carregando...</strong>
+          </div>
+        )}
+
+        {selectedGroup && (
+          <label>
+            <span>Tipo</span>
+            <select
+              value={exerciseType}
+              onChange={(event) => {
+                setExerciseType(event.target.value as ExerciseType);
+                setExercise(null);
+                setResult(null);
+              }}
+            >
+              {selectedGroup.eligibleTypes.map((type) => (
+                <option key={type} value={type}>
+                  {{
+                    CLASSIFY_ONE: "Classificar um item",
+                    CLASSIFY_BATCH: "Classificar vários itens",
+                    TRUE_FALSE: "Verdadeiro ou falso",
+                    SINGLE_CHOICE: "Escolha única",
+                    MULTIPLE_SELECT: "Seleção múltipla",
+                  }[type]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {(!isContextualSession || groups.length > 0) && <button
           type="button"
           className="exercise-primary-button"
           disabled={!groupId || isLoadingExercise}
@@ -266,16 +362,16 @@ export function ExerciseSession() {
             : exercise
               ? "Gerar outro"
               : "Solicitar exercício"}
-        </button>
+        </button>}
       </section>
 
-      {!subtopicId && (
+      {!effectiveSubtopicId && !isContextualSession && (
         <div className="exercise-empty">
           Selecione a estrutura para começar.
         </div>
       )}
 
-      {subtopicId && !isLoadingGroups && groups.length === 0 && (
+      {effectiveSubtopicId && !isLoadingGroups && groups.length === 0 && (
         <div className="exercise-empty">
           Não há grupos ativos com itens classificados neste
           subtópico.
@@ -290,10 +386,8 @@ export function ExerciseSession() {
         <ExerciseRenderer
           exercise={exercise}
           result={result}
-          selectedCategoryId={selectedCategoryId}
           isSubmitting={isSubmitting}
-          onSelect={setSelectedCategoryId}
-          onSubmit={() => void submitAnswer()}
+          onSubmit={(answer) => void submitAnswer(answer)}
           onNext={() => void loadNextExercise()}
         />
       )}

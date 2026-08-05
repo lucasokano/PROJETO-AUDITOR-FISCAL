@@ -814,6 +814,65 @@ textarea {
   }
 }
 
+/* ===== Integração contextual de exercícios ===== */
+
+.structured-exercise-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.structured-exercise-section p {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.structured-exercise-eyebrow,
+.exercise-selected-group > span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.exercise-free-description-hidden {
+  display: none;
+}
+
+.exercise-selection-contextual {
+  grid-template-columns: minmax(220px, 1fr) auto;
+}
+
+.exercise-selected-group {
+  display: flex;
+  min-height: 34px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.exercise-selected-group strong {
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  .structured-exercise-section {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exercise-selection-contextual {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Motor de exercícios ===== */
 
 .exercise-session-page {
