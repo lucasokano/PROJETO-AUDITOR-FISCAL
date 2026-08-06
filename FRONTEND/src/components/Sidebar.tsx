@@ -1,7 +1,10 @@
 import {
+  BookOpen,
+  Brain,
   ChevronDown,
   ChevronRight,
   Home,
+  RotateCcw,
   Settings,
 } from "lucide-react";
 
@@ -107,11 +110,17 @@ export function Sidebar({
           : "sidebar-closed"
       }`}
     >
-      <h2 className="sidebar-title">
-        Sistema de Estudos
-      </h2>
+      <div className="sidebar-brand">
+        <span className="sidebar-brand-mark" aria-hidden="true">G</span>
+        <div>
+          <strong>GEMA</strong>
+          <span>Sistema de estudos</span>
+        </div>
+      </div>
 
       <nav className="sidebar-navigation">
+        <span className="sidebar-section-label">Estudo</span>
+
         <button
           type="button"
           className={`sidebar-home-button ${
@@ -123,8 +132,28 @@ export function Sidebar({
         >
           <Home size={18} />
 
-          <span>Página inicial</span>
+          <span>Início</span>
         </button>
+
+        <button
+          type="button"
+          className={`sidebar-home-button ${location.pathname === "/revisao" ? "sidebar-item-active" : ""}`}
+          onClick={() => navigate("/revisao")}
+        >
+          <RotateCcw size={17} />
+          <span>Revisões</span>
+        </button>
+
+        <button
+          type="button"
+          className={`sidebar-home-button ${location.pathname === "/exercicios" ? "sidebar-item-active" : ""}`}
+          onClick={() => navigate("/exercicios")}
+        >
+          <Brain size={17} />
+          <span>Prática livre</span>
+        </button>
+
+        <span className="sidebar-section-label sidebar-disciplines-label">Disciplinas</span>
 
         {isLoading && (
           <div className="sidebar-status">
@@ -177,14 +206,15 @@ export function Sidebar({
                     )
                   }
                 >
-                  <span>
+                  <span className="discipline-button-content">
+                    <BookOpen size={16} aria-hidden="true" />
                     {discipline.name}
                   </span>
 
                   {isExpanded ? (
-                    <ChevronDown size={18} />
+                    <ChevronDown size={15} />
                   ) : (
-                    <ChevronRight size={18} />
+                    <ChevronRight size={15} />
                   )}
                 </button>
 
@@ -229,6 +259,7 @@ export function Sidebar({
       </nav>
 
       <div className="sidebar-admin-section">
+        <span className="sidebar-section-label">Sistema</span>
         <button
           type="button"
           className={`sidebar-home-button ${

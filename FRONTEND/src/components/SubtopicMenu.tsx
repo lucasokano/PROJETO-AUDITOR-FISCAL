@@ -68,7 +68,9 @@ export function SubtopicMenu() {
   return (
     <aside className="subtopic-sidebar">
       <div className="subtopic-sidebar-header">
-        <BookOpen size={18} />
+        <span className="subtopic-header-icon" aria-hidden="true">
+          <BookOpen size={16} />
+        </span>
 
         <div>
           <span className="subtopic-discipline-name">
@@ -80,6 +82,11 @@ export function SubtopicMenu() {
       </div>
 
       <nav className="subtopic-navigation">
+        <div className="subtopic-navigation-heading">
+          <span>Subtópicos</span>
+          <strong>{topic.subtopics.length}</strong>
+        </div>
+
         {topic.subtopics.map((subtopic) => (
           <button
             type="button"
