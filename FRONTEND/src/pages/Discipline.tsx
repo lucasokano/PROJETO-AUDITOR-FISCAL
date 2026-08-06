@@ -4,10 +4,17 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  CircleCheck,
+  CircleX,
+  FileText,
+  ListChecks,
+} from "lucide-react";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import { StatementCard } from "../components/StatementCard";
+import { EmbeddedExerciseSession } from "../components/exercises/EmbeddedExerciseSession";
 import { useStudy } from "../contexts/StudyContext";
 import { getExerciseGroups } from "../services/exerciseApi";
 import {
@@ -15,7 +22,19 @@ import {
   registerAnswer,
 } from "../services/studyApi";
 import type { PublicStatement } from "../types/study";
-import type { ExerciseGroup } from "../types/exercise";
+import {
+  ExerciseType,
+  type ClassifyBatchResult,
+  type ExerciseGroup,
+} from "../types/exercise";
+
+const exerciseTypeLabels = {
+  [ExerciseType.CLASSIFY_ONE]: "Classificar item",
+  [ExerciseType.CLASSIFY_BATCH]: "Classificar em colunas",
+  [ExerciseType.TRUE_FALSE]: "Verdadeiro ou falso",
+  [ExerciseType.SINGLE_CHOICE]: "Escolha única",
+  [ExerciseType.MULTIPLE_SELECT]: "Seleção múltipla",
+};
 
 interface AnswerResult {
   statementId: number;
@@ -23,7 +42,6 @@ interface AnswerResult {
 }
 
 export function Discipline() {
-  const navigate = useNavigate();
   const {
     disciplineId,
     topicId,
@@ -77,6 +95,17 @@ export function Discipline() {
   const [areExerciseGroupsLoading, setAreExerciseGroupsLoading] =
     useState(false);
 
+  const [activeExercise, setActiveExercise] = useState<{
+    type: ExerciseType;
+    groupId: number;
+  } | null>(null);
+
+  const [isRealMultipleChoiceActive, setIsRealMultipleChoiceActive] =
+    useState(false);
+
+  const [batchResult, setBatchResult] =
+    useState<ClassifyBatchResult | null>(null);
+
   const answerInFlightRef = useRef(false);
   const activeSubtopicIdRef = useRef<
     number | null
@@ -90,6 +119,9 @@ useEffect(() => {
   setStatements([]);
   setError(null);
   setAnswerError(null);
+  setActiveExercise(null);
+  setIsRealMultipleChoiceActive(false);
+  setBatchResult(null);
 
   if (!subtopic) {
     setIsLoading(false);
@@ -204,6 +236,36 @@ useEffect(() => {
       ? Math.round((correct / total) * 100)
       : 0;
 
+  const isBatchExerciseActive =
+    activeExercise?.type === ExerciseType.CLASSIFY_BATCH;
+  const performanceTotal = isBatchExerciseActive
+    ? batchResult?.totalCount ?? 0
+    : total;
+  const performanceCorrect = isBatchExerciseActive
+    ? batchResult?.correctCount ?? 0
+    : correct;
+  const performanceIncorrect = isBatchExerciseActive
+    ? performanceTotal - performanceCorrect
+    : incorrect;
+  const performanceAnswered = isBatchExerciseActive
+    ? batchResult?.totalCount ?? 0
+    : answered;
+  const performancePercentage = isBatchExerciseActive
+    ? Math.round((batchResult?.score ?? 0) * 100)
+    : percentage;
+
+  const structuredExerciseTabs = useMemo(
+    () =>
+      [ExerciseType.CLASSIFY_BATCH, ExerciseType.MULTIPLE_SELECT].flatMap((type) => {
+        const group = exerciseGroups.find((candidate) =>
+          candidate.eligibleTypes.includes(type),
+        );
+
+        return group ? [{ type, groupId: group.id }] : [];
+      }),
+    [exerciseGroups],
+  );
+
   async function handleAnswer(
   statement: PublicStatement,
   selectedAnswer: boolean,
@@ -311,66 +373,90 @@ useEffect(() => {
 
       <h2>{subtopic?.name ?? topic.name}</h2>
 
-      {total > 0 && (
-        <div className="performance-kicks" role="list" aria-label="Sequência de respostas">
-          {Array.from({ length: total }, (_, index) => {
-            const answer = answers[index];
-            const status = !answer
-              ? "pending"
-              : answer.isCorrect
-                ? "correct"
-                : "incorrect";
-
-            return (
-              <span
-                key={answer?.statementId ?? `pending-${index}`}
-                className={`performance-kick performance-kick-${status}`}
-                role="listitem"
-                aria-label={`Questão ${index + 1}`}
-              />
-            );
-          })}
-        </div>
-      )}
-
       {subtopic && (
-        <section className="structured-exercise-section">
-          <div>
-            <span className="structured-exercise-eyebrow">
-              Exercícios estruturados
-            </span>
-            <p>
-              {areExerciseGroupsLoading
-                ? "Consultando conteúdo disponível..."
-                : exerciseGroups.length > 0
-                  ? `${exerciseGroups.length} ${exerciseGroups.length === 1 ? "grupo disponível" : "grupos disponíveis"}`
-                  : "Nenhum grupo de exercícios disponível neste subtópico."}
-            </p>
-          </div>
+        <nav className="discipline-exercise-tabs" aria-label="Tipos de exercício do subtópico">
+          <button
+            type="button"
+            className={`discipline-exercise-tab ${activeExercise === null && !isRealMultipleChoiceActive ? "discipline-exercise-tab-active" : ""}`}
+            onClick={() => {
+              setActiveExercise(null);
+              setIsRealMultipleChoiceActive(false);
+            }}
+          >
+            Afirmações V/F
+          </button>
 
-          {exerciseGroups.length > 0 && (
+          <button
+            type="button"
+            className={`discipline-exercise-tab ${isRealMultipleChoiceActive ? "discipline-exercise-tab-active" : ""}`}
+            onClick={() => {
+              setActiveExercise(null);
+              setIsRealMultipleChoiceActive(true);
+            }}
+          >
+            Questões reais múltipla escolha
+          </button>
+
+          {structuredExerciseTabs.map(({ type, groupId }) => (
             <button
               type="button"
-              className="exercise-primary-button"
-              onClick={() =>
-                navigate(
-                  `/disciplina/${disciplineId}/topico/${topicId}/subtopico/${subtopicId}/exercicios`,
-                )
-              }
+              className={`discipline-exercise-tab ${activeExercise?.type === type ? "discipline-exercise-tab-active" : ""}`}
+              key={type}
+              onClick={() => {
+                setIsRealMultipleChoiceActive(false);
+                setBatchResult(null);
+                setActiveExercise({ type, groupId });
+              }}
             >
-              Estudar conteúdo estruturado
+              {exerciseTypeLabels[type]}
             </button>
-          )}
-        </section>
+          ))}
+
+          {areExerciseGroupsLoading && <span className="discipline-tabs-loading">Carregando...</span>}
+        </nav>
       )}
 
-      <div className="discipline-content">
+      {activeExercise && subtopic ? (
+        <EmbeddedExerciseSession
+          subtopicId={subtopic.id}
+          groupId={activeExercise.groupId}
+          groupName={exerciseGroups.find((group) => group.id === activeExercise.groupId)?.name ?? "Exercício estruturado"}
+          type={activeExercise.type}
+          onResultChange={(result) =>
+            setBatchResult(result?.type === ExerciseType.CLASSIFY_BATCH ? result : null)
+          }
+        />
+      ) : isRealMultipleChoiceActive ? (
+        <section className="real-multiple-choice-empty">
+          <h3>Questões reais múltipla escolha</h3>
+          <p>Nenhuma questão disponível neste subtópico.</p>
+        </section>
+      ) : <div className="discipline-content">
         <div className="statements-area">
           <div className="statements-table">
             <div className="statements-header">
-              <div>Afirmação</div>
-              <div>Verdadeiro</div>
-              <div>Falso</div>
+              <div className="statement-score-cell">
+                <div className="performance-kicks" role="list" aria-label="Sequência de respostas">
+                  {Array.from({ length: total }, (_, index) => {
+                    const answer = answers[index];
+                    const status = !answer
+                      ? "pending"
+                      : answer.isCorrect
+                        ? "correct"
+                        : "incorrect";
+
+                    return (
+                      <span
+                        key={answer?.statementId ?? `pending-${index}`}
+                        className={`performance-kick performance-kick-${status}`}
+                        role="listitem"
+                        aria-label={`Questão ${index + 1}`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="statement-response-heading">Resposta</div>
             </div>
 
             <div className="statement-list">
@@ -458,47 +544,53 @@ useEffect(() => {
           </div>
         </div>
 
-      </div>
+      </div>}
       </section>
 <aside className="performance-panel">
         <header className="performance-panel-heading">
-          <div>
-            <span>Sessão atual</span>
-            <h3>Desempenho</h3>
-          </div>
-          <strong>{percentage}%</strong>
+          <h3>Desempenho</h3>
         </header>
 
-        <div className="performance-item">
-          <span>Total</span>
-          <strong>{total}</strong>
+        <div
+          className="performance-ring"
+          role="progressbar"
+          aria-label="Percentual de acertos"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={performancePercentage}
+          style={{
+            background: `conic-gradient(var(--color-primary) ${performancePercentage * 3.6}deg, #303640 0deg)`,
+          }}
+        >
+          <div className="performance-ring-center">
+            <strong>{performancePercentage}%</strong>
+            <span>de acertos</span>
+          </div>
         </div>
 
-        <div className="performance-item">
-          <span>Respondidas</span>
-          <strong>{answered}</strong>
+        <div className="performance-metrics">
+          <div className="performance-item">
+            <span><FileText size={15} /> {isBatchExerciseActive ? "Total de itens" : "Total de afirmações"}</span>
+            <strong>{performanceTotal}</strong>
+          </div>
+
+          <div className="performance-item">
+            <span><ListChecks size={15} /> Respondidas</span>
+            <strong>{performanceAnswered}</strong>
+          </div>
+
+          <div className="performance-item performance-correct">
+            <span><CircleCheck size={15} /> Certas</span>
+            <strong>{performanceCorrect}</strong>
+          </div>
+
+          <div className="performance-item performance-incorrect">
+            <span><CircleX size={15} /> Erradas</span>
+            <strong>{performanceIncorrect}</strong>
+          </div>
         </div>
 
-        <div className="performance-item performance-correct">
-          <span>Certas</span>
-          <strong>{correct}</strong>
-        </div>
-
-        <div className="performance-item performance-incorrect">
-          <span>Erradas</span>
-          <strong>{incorrect}</strong>
-        </div>
-
-        <div className="performance-percentage">
-          <span>Certas sobre o total</span>
-          <strong>{percentage}%</strong>
-        </div>
-
-        <div className="performance-progress">
-          <div className="performance-progress-bar" style={{ width: `${percentage}%` }} />
-        </div>
-
-        {answered > 0 && (
+        {!isBatchExerciseActive && answered > 0 && (
           <button type="button" className="restart-button" onClick={restartSubtopic}>
             Reiniciar subtópico
           </button>

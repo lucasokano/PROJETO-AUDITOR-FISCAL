@@ -1,11 +1,125 @@
 import { useState, type DragEvent } from "react";
 import type { ClassifyBatchExercise, ClassifyBatchResult } from "../../types/exercise";
 
-export function ClassificationBatchExercise({ exercise, result, isSubmitting, onSubmit, onNext }: { exercise: ClassifyBatchExercise; result: ClassifyBatchResult | null; isSubmitting: boolean; onSubmit: (answer: { assignments: Array<{ itemId: number; categoryId: number }> }) => void; onNext: () => void }) {
+interface Props {
+  exercise: ClassifyBatchExercise;
+  result: ClassifyBatchResult | null;
+  isSubmitting: boolean;
+  onSubmit: (answer: { assignments: Array<{ itemId: number; categoryId: number }> }) => void;
+  onNext: () => void;
+}
+
+export function ClassificationBatchExercise({ exercise, result, isSubmitting, onSubmit, onNext }: Props) {
   const [assignments, setAssignments] = useState<Record<number, number>>({});
-  function assign(itemId: number, categoryId: number) { if (!result) setAssignments((current) => ({ ...current, [itemId]: categoryId })); }
-  function drop(event: DragEvent, categoryId: number) { event.preventDefault(); const itemId = Number(event.dataTransfer.getData("text/plain")); if (itemId) assign(itemId, categoryId); }
+
+  function assign(itemId: number, categoryId: number) {
+    if (!result) setAssignments((current) => ({ ...current, [itemId]: categoryId }));
+  }
+
+  function drop(event: DragEvent, categoryId: number) {
+    event.preventDefault();
+    const itemId = Number(event.dataTransfer.getData("text/plain"));
+    if (itemId) assign(itemId, categoryId);
+  }
+
+  function startDragging(event: DragEvent, itemId: number) {
+    event.dataTransfer.setData("text/plain", String(itemId));
+  }
+
   const unassigned = exercise.payload.items.filter((item) => assignments[item.itemId] === undefined);
   const complete = Object.keys(assignments).length === exercise.payload.items.length;
-  return <article className="exercise-card exercise-batch"><header className="exercise-card-heading"><span>{exercise.payload.groupName}</span><h3>{exercise.payload.prompt}</h3></header><div className="batch-board"><section className="batch-column"><h4>Não classificados</h4>{unassigned.map((item) => <div key={item.itemId} className="batch-item" draggable={!result} onDragStart={(event) => event.dataTransfer.setData("text/plain", String(item.itemId))}><span>{item.label}</span><select aria-label={`Classificar ${item.label}`} defaultValue="" disabled={Boolean(result)} onChange={(event) => assign(item.itemId, Number(event.target.value))}><option value="">Mover para...</option>{exercise.payload.categories.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></div>)}</section>{exercise.payload.categories.map((category) => <section key={category.id} className="batch-column" onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, category.id)}><h4>{category.label}</h4>{exercise.payload.items.filter((item) => assignments[item.itemId] === category.id).map((item) => <div key={item.itemId} className="batch-item" draggable={!result} onDragStart={(event) => event.dataTransfer.setData("text/plain", String(item.itemId))}><span>{item.label}</span>{!result && <select aria-label={`Mover ${item.label}`} value={category.id} onChange={(event) => assign(item.itemId, Number(event.target.value))}>{exercise.payload.categories.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</select>}</div>)}</section>)}</div>{!result ? <button type="button" className="exercise-primary-button" disabled={!complete || isSubmitting} onClick={() => onSubmit({ assignments: exercise.payload.items.map((item) => ({ itemId: item.itemId, categoryId: assignments[item.itemId]! })) })}>Responder</button> : <div className="exercise-feedback"><strong>{result.correctCount} de {result.totalCount} itens corretos ({Math.round(result.score * 100)}%)</strong><div className="batch-results">{result.items.map((item) => <p key={item.itemId} className={item.isCorrect ? "result-correct" : "result-incorrect"}><strong>{item.label}</strong>: {item.isCorrect ? item.correctCategory.label : `${item.selectedCategory.label} → ${item.correctCategory.label}`}{item.explanation && <small>{item.explanation}</small>}{item.reference && <small>Referência: {item.reference}</small>}</p>)}</div><button type="button" className="exercise-primary-button" onClick={onNext}>Próximo exercício</button></div>}</article>;
+
+  function getAttemptResultClass(itemId: number) {
+    const itemResult = result?.items.find((item) => item.itemId === itemId);
+    if (!itemResult) return "";
+    return itemResult.isCorrect ? "batch-attempt-correct" : "batch-attempt-incorrect";
+  }
+
+  return (
+    <article className="exercise-card exercise-batch">
+      <header className="exercise-card-heading">
+        <span>{exercise.payload.groupName}</span>
+        <h3>{exercise.payload.prompt}</h3>
+      </header>
+
+      <section className="batch-item-source">
+        <h4>Itens para classificar</h4>
+        <div className="batch-item-pool">
+          {unassigned.map((item) => (
+            <div
+              key={item.itemId}
+              className="batch-item"
+              draggable={!result}
+              onDragStart={(event) => startDragging(event, item.itemId)}
+            >
+              <span>{item.label}</span>
+            </div>
+          ))}
+          {!unassigned.length && <span className="batch-source-empty">Todos os itens foram distribuídos.</span>}
+        </div>
+      </section>
+
+      <div className="batch-board">
+        {exercise.payload.categories.map((category) => (
+          <section
+            key={category.id}
+            className="batch-column"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => drop(event, category.id)}
+          >
+            <h4>{category.label}</h4>
+            {exercise.payload.items
+              .filter((item) => assignments[item.itemId] === category.id)
+              .map((item) => (
+                <div
+                  key={item.itemId}
+                  className={`batch-item ${getAttemptResultClass(item.itemId)}`}
+                  draggable={!result}
+                  onDragStart={(event) => startDragging(event, item.itemId)}
+                >
+                  <span>{item.label}</span>
+                </div>
+              ))}
+          </section>
+        ))}
+      </div>
+
+      {!result ? (
+        <button
+          type="button"
+          className="exercise-primary-button"
+          disabled={!complete || isSubmitting}
+          onClick={() => onSubmit({
+            assignments: exercise.payload.items.map((item) => ({
+              itemId: item.itemId,
+              categoryId: assignments[item.itemId]!,
+            })),
+          })}
+        >
+          Responder
+        </button>
+      ) : (
+        <div className="exercise-feedback">
+          <section className="batch-answer-key">
+            <h4>Gabarito</h4>
+            <div className="batch-board batch-answer-board">
+              {exercise.payload.categories.map((category) => (
+                <section key={category.id} className="batch-column">
+                  <h4>{category.label}</h4>
+                  {result.items
+                    .filter((item) => item.correctCategory.id === category.id)
+                    .map((item) => (
+                      <div key={item.itemId} className="batch-item batch-answer-item">
+                        <span>{item.label}</span>
+                      </div>
+                    ))}
+                </section>
+              ))}
+            </div>
+          </section>
+          <button type="button" className="exercise-primary-button" onClick={onNext}>Próximo exercício</button>
+        </div>
+      )}
+    </article>
+  );
 }

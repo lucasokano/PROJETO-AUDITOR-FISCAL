@@ -17,7 +17,7 @@ export function StatementCard({
         {text}
       </div>
 
-      <div className="statement-answer-cell">
+      <div className="statement-actions">
         <button
           type="button"
           className="answer-button answer-true"
@@ -28,9 +28,6 @@ export function StatementCard({
         >
           <Check size={21} />
         </button>
-      </div>
-
-      <div className="statement-answer-cell">
         <button
           type="button"
           className="answer-button answer-false"
