@@ -293,7 +293,9 @@ useEffect(() => {
   }
 
   return (
-    <section className="page discipline-page">
+    <div className="discipline-workspace">
+
+      <section className="page discipline-page">
       <div className="discipline-heading">
         <span>{discipline.name}</span>
         <span>/</span>
@@ -308,6 +310,28 @@ useEffect(() => {
       </div>
 
       <h2>{subtopic?.name ?? topic.name}</h2>
+
+      {total > 0 && (
+        <div className="performance-kicks" role="list" aria-label="Sequência de respostas">
+          {Array.from({ length: total }, (_, index) => {
+            const answer = answers[index];
+            const status = !answer
+              ? "pending"
+              : answer.isCorrect
+                ? "correct"
+                : "incorrect";
+
+            return (
+              <span
+                key={answer?.statementId ?? `pending-${index}`}
+                className={`performance-kick performance-kick-${status}`}
+                role="listitem"
+                aria-label={`Questão ${index + 1}`}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {subtopic && (
         <section className="structured-exercise-section">
@@ -434,54 +458,53 @@ useEffect(() => {
           </div>
         </div>
 
-        <aside className="performance-panel">
-          <h3>Desempenho</h3>
-
-          <div className="performance-item">
-            <span>Total</span>
-            <strong>{total}</strong>
-          </div>
-
-          <div className="performance-item">
-            <span>Respondidas</span>
-            <strong>{answered}</strong>
-          </div>
-
-          <div className="performance-item performance-correct">
-            <span>Certas</span>
-            <strong>{correct}</strong>
-          </div>
-
-          <div className="performance-item performance-incorrect">
-            <span>Erradas</span>
-            <strong>{incorrect}</strong>
-          </div>
-
-          <div className="performance-percentage">
-            <span>Certas sobre o total</span>
-            <strong>{percentage}%</strong>
-          </div>
-
-          <div className="performance-progress">
-            <div
-              className="performance-progress-bar"
-              style={{
-                width: `${percentage}%`,
-              }}
-            />
-          </div>
-
-          {answered > 0 && (
-            <button
-              type="button"
-              className="restart-button"
-              onClick={restartSubtopic}
-            >
-              Reiniciar subtópico
-            </button>
-          )}
-        </aside>
       </div>
-    </section>
+      </section>
+<aside className="performance-panel">
+        <header className="performance-panel-heading">
+          <div>
+            <span>Sessão atual</span>
+            <h3>Desempenho</h3>
+          </div>
+          <strong>{percentage}%</strong>
+        </header>
+
+        <div className="performance-item">
+          <span>Total</span>
+          <strong>{total}</strong>
+        </div>
+
+        <div className="performance-item">
+          <span>Respondidas</span>
+          <strong>{answered}</strong>
+        </div>
+
+        <div className="performance-item performance-correct">
+          <span>Certas</span>
+          <strong>{correct}</strong>
+        </div>
+
+        <div className="performance-item performance-incorrect">
+          <span>Erradas</span>
+          <strong>{incorrect}</strong>
+        </div>
+
+        <div className="performance-percentage">
+          <span>Certas sobre o total</span>
+          <strong>{percentage}%</strong>
+        </div>
+
+        <div className="performance-progress">
+          <div className="performance-progress-bar" style={{ width: `${percentage}%` }} />
+        </div>
+
+        {answered > 0 && (
+          <button type="button" className="restart-button" onClick={restartSubtopic}>
+            Reiniciar subtópico
+          </button>
+        )}
+      </aside>
+
+    </div>
   );
 }

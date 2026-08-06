@@ -807,3 +807,145 @@ body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSyst
     inset: 0 0 0 auto;
   }
 }
+
+/* Subtopic performance workspace */
+.discipline-workspace {
+  display: grid;
+  width: 100%;
+  max-width: 1600px;
+  grid-template-columns: minmax(0, 1fr) 274px;
+  align-items: start;
+  gap: 28px;
+  margin-inline: auto;
+}
+
+.discipline-workspace > .discipline-page {
+  min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.discipline-content {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.discipline-workspace > .performance-panel {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 18px;
+  border-top: 2px solid var(--color-primary);
+  background: #1c1c1c;
+}
+
+.discipline-content .statements-area {
+  grid-column: 1;
+}
+
+.performance-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.performance-panel-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.performance-panel-heading span {
+  color: var(--color-text-muted, var(--color-text-secondary));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.performance-panel-heading h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.performance-panel-heading > strong {
+  color: var(--color-primary-hover);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.performance-kicks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 13px;
+  margin: 10px 0 22px;
+}
+
+.performance-kick {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 1px solid #4a4a4a;
+  border-radius: 50%;
+  background: #292929;
+  box-shadow: inset 0 0 0 2px #141414;
+}
+
+.performance-kick-correct {
+  border-color: #4ade80;
+  background: #22c55e;
+}
+
+.performance-kick-incorrect {
+  border-color: #f87171;
+  background: #ef4444;
+}
+
+.performance-kick-pending {
+  border-color: #505050;
+  background: #252525;
+}
+
+.discipline-workspace > .performance-panel .performance-item {
+  padding: 8px 0;
+  font-size: 12px;
+}
+
+.discipline-workspace > .performance-panel .performance-item strong {
+  font-size: 14px;
+}
+
+.discipline-workspace > .performance-panel .performance-percentage {
+  margin-top: 14px;
+}
+
+.discipline-workspace > .performance-panel .performance-percentage strong {
+  font-size: 22px;
+}
+
+@media (max-width: 1050px) {
+  .discipline-workspace {
+    grid-template-columns: minmax(0, 1fr) 230px;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .discipline-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .discipline-workspace > .performance-panel {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .discipline-workspace > .discipline-page {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
