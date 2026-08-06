@@ -16,7 +16,10 @@ import {
   type FormEvent,
   type MouseEvent,
 } from "react";
+import { Link } from "react-router-dom";
+import { AdminNavigation } from "../components/admin/AdminNavigation";
 import { useStudy } from "../contexts/StudyContext";
+import { getExerciseGroups } from "../services/exerciseApi";
 import {
   createKnowledgeCategory,
   createKnowledgeClassification,
@@ -40,6 +43,15 @@ import type {
   KnowledgeItem,
   SubtopicKnowledge,
 } from "../types/knowledge";
+import { ExerciseType, type ExerciseGroup } from "../types/exercise";
+
+const exerciseTypeLabels: Record<ExerciseType, string> = {
+  [ExerciseType.CLASSIFY_ONE]: "Classificar um item",
+  [ExerciseType.CLASSIFY_BATCH]: "Classificar em lote",
+  [ExerciseType.TRUE_FALSE]: "Verdadeiro ou falso",
+  [ExerciseType.SINGLE_CHOICE]: "Escolha única",
+  [ExerciseType.MULTIPLE_SELECT]: "Seleção múltipla",
+};
 
 type Message = {
   type: "success" | "error";
@@ -82,6 +94,7 @@ export function AdminKnowledge() {
   const [topicId, setTopicId] = useState("");
   const [subtopicId, setSubtopicId] = useState("");
   const [knowledge, setKnowledge] = useState<SubtopicKnowledge | null>(null);
+  const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [groupDraft, setGroupDraft] = useState(emptyGroupDraft);
@@ -103,12 +116,21 @@ export function AdminKnowledge() {
   const topic = discipline?.topics.find(
     (item) => item.id === Number(topicId),
   );
+  const selectedSubtopic = topic?.subtopics.find(
+    (item) => item.id === Number(subtopicId),
+  );
   const selectedGroup = knowledge?.groups.find(
     (group) => group.id === selectedGroupId,
   );
   const selectedItem = knowledge?.items.find(
     (item) => item.id === selectedItemId,
   );
+  const selectedExerciseGroup = exerciseGroups.find(
+    (group) => group.id === selectedGroupId,
+  );
+  const canPracticeBatch = selectedExerciseGroup?.eligibleTypes.includes(
+    ExerciseType.CLASSIFY_BATCH,
+  ) ?? false;
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
@@ -130,14 +152,19 @@ export function AdminKnowledge() {
 
     if (!numericSubtopicId) {
       setKnowledge(null);
+      setExerciseGroups([]);
       return;
     }
 
     try {
       setIsLoading(true);
       setMessage(null);
-      const result = await getSubtopicKnowledge(numericSubtopicId);
+      const [result, availableGroups] = await Promise.all([
+        getSubtopicKnowledge(numericSubtopicId),
+        getExerciseGroups(numericSubtopicId).catch(() => []),
+      ]);
       setKnowledge(result);
+      setExerciseGroups(availableGroups);
       setSelectedGroupId((current) =>
         result.groups.some((group) => group.id === current)
           ? current
@@ -409,11 +436,12 @@ export function AdminKnowledge() {
 
   return (
     <section className="page knowledge-admin-page">
+      <AdminNavigation />
       <header className="knowledge-admin-heading">
         <div>
           <span>Administração</span>
           <h2>Conhecimento estruturado</h2>
-          <p>Gerencie dimensões, categorias, itens e suas classificações.</p>
+          <p>Construa a base reutilizável que gera os cinco formatos de exercícios dinâmicos.</p>
         </div>
       </header>
 
@@ -456,6 +484,32 @@ export function AdminKnowledge() {
           </select>
         </label>
       </section>
+
+      {knowledge && (
+        <section className="knowledge-readiness" aria-label="Elegibilidade para exercícios">
+          <div>
+            <span>Preparação do grupo</span>
+            <strong>{selectedGroup?.name ?? "Selecione um grupo"}</strong>
+          </div>
+          <div className="knowledge-readiness-types">
+            {Object.values(ExerciseType).map((type) => {
+              const eligible = exerciseGroups
+                .find((group) => group.id === selectedGroupId)
+                ?.eligibleTypes.includes(type) ?? false;
+              return <span key={type} className={eligible ? "knowledge-type-ready" : "knowledge-type-unavailable"}>{exerciseTypeLabels[type]}</span>;
+            })}
+          </div>
+          {canPracticeBatch && discipline && topic && selectedSubtopic && selectedGroupId && (
+            <Link
+              className="knowledge-batch-action"
+              to={`/disciplina/${discipline.slug}/topico/${topic.slug}/subtopico/${selectedSubtopic.slug}/exercicios?type=CLASSIFY_BATCH&groupId=${selectedGroupId}`}
+            >
+              Abrir quadro de arraste
+            </Link>
+          )}
+          <small>Os formatos são habilitados automaticamente conforme categorias e itens classificados.</small>
+        </section>
+      )}
 
       {!subtopicId ? (
         <div className="knowledge-empty">Selecione um subtópico para administrar o conhecimento estruturado.</div>

@@ -56,6 +56,301 @@ body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSyst
   }
 }
 
+/* Administrative workspace */
+.admin-workspace,
+.admin-structure-page,
+.statements-page,
+.knowledge-admin-page {
+  max-width: 1240px;
+  margin-inline: auto;
+}
+
+.admin-local-navigation {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 28px;
+  padding-bottom: 9px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-local-link {
+  display: inline-flex;
+  min-height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.admin-local-link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.admin-local-link-active {
+  color: var(--color-primary-hover);
+  background: var(--color-primary-soft);
+}
+
+.admin-workspace-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.admin-preview-link,
+.admin-dashboard-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-preview-link {
+  min-height: 34px;
+  padding: 0 12px;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.admin-preview-link:hover {
+  border-color: var(--color-primary-border);
+  background: var(--color-surface-hover);
+}
+
+.admin-batch-action {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  color: var(--color-on-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-batch-action:hover {
+  color: var(--color-on-primary);
+  background: var(--color-primary-hover);
+}
+
+.admin-overview-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 24px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-overview-strip > div {
+  display: flex;
+  min-height: 72px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 20px;
+  border-right: 1px solid var(--color-border);
+}
+
+.admin-overview-strip > div:last-child {
+  border-right: 0;
+}
+
+.admin-overview-strip strong {
+  color: var(--color-text);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.admin-overview-strip span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-dashboard-card-featured {
+  border-color: var(--color-primary-border);
+}
+
+.admin-capabilities-section {
+  margin-top: 30px;
+  padding-top: 22px;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-capabilities-section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  color: var(--color-text-muted);
+}
+
+.admin-capabilities-section h3 {
+  margin: 3px 0 0;
+}
+
+.admin-capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.admin-capabilities-grid > div {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 14px;
+  color: var(--color-success);
+  border-right: 1px solid var(--color-border);
+}
+
+.admin-capabilities-grid > div:last-child {
+  border-right: 0;
+}
+
+.admin-capabilities-grid span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.admin-capabilities-grid strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-capabilities-grid small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.knowledge-readiness {
+  display: grid;
+  grid-template-columns: minmax(160px, .7fr) minmax(420px, 2fr);
+  align-items: center;
+  gap: 10px 20px;
+  margin-bottom: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.knowledge-readiness > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.knowledge-readiness > div:first-child span,
+.knowledge-readiness > small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.knowledge-readiness > div:first-child strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.knowledge-readiness-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.knowledge-readiness-types span {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.knowledge-batch-action {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  color: var(--color-on-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.knowledge-batch-action:hover {
+  color: var(--color-on-primary);
+  background: var(--color-primary-hover);
+}
+
+.knowledge-type-ready {
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary-border) !important;
+  background: var(--color-primary-soft);
+}
+
+.knowledge-type-unavailable {
+  color: var(--color-text-muted);
+  opacity: .55;
+}
+
+.knowledge-readiness > small {
+  grid-column: 1 / -1;
+}
+
+.admin-structure-header,
+.statements-header,
+.knowledge-admin-heading {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+@media (max-width: 980px) {
+  .admin-capabilities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-capabilities-grid > div {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .knowledge-readiness {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-workspace-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-overview-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-overview-strip > div:nth-child(2) {
+    border-right: 0;
+  }
+}
+
 .exercise-batch {
   width: min(1180px, calc(100vw - 80px));
   margin-left: 50%;

@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import { StudyStructureManager } from "../components/admin/DisciplineManager";
+import { AdminNavigation } from "../components/admin/AdminNavigation";
 import { useStudy } from "../contexts/StudyContext";
 
 import {
@@ -207,14 +208,14 @@ export function AdminStructure() {
 
   return (
     <section className="admin-structure-page">
+      <AdminNavigation />
       <header className="admin-structure-header">
         <span>Administração</span>
 
-        <h1>Editar disciplinas</h1>
+        <h1>Estrutura de conteúdo</h1>
 
         <p>
-          Crie e gerencie toda a estrutura
-          de estudos.
+          Crie e organize disciplinas, tópicos e subtópicos usados por todos os formatos de estudo.
         </p>
       </header>
 

@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import { useStudy } from "../contexts/StudyContext";
+import { AdminNavigation } from "../components/admin/AdminNavigation";
 
 import {
   createStatement,
@@ -787,9 +788,11 @@ export function AdminStatements() {
 
   return (
     <section className="page admin-page statements-page">
+      <AdminNavigation />
       <header className="statements-header">
         <div>         
           <h2>Gerenciar afirmações</h2>         
+          <p>Administre o conteúdo verdadeiro/falso utilizado no estudo e nas revisões legadas.</p>
         </div>
 
         <div className="statements-header-actions">

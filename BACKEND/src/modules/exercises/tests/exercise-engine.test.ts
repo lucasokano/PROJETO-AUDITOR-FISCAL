@@ -34,17 +34,56 @@ test("CLASSIFY_ONE preserva opções embaralhadas sem expor gabarito", () => {
   assert.equal(result.isCorrect, true);
 });
 
-test("CLASSIFY_BATCH não repete itens, usa categorias distintas e calcula score individual", () => {
+test("CLASSIFY_BATCH não repete itens e calcula score individual", () => {
   const generated = generateClassifyBatch(source, { ...context("batch"), itemCount: 4 });
   const pending = generated.pending.type === ExerciseType.CLASSIFY_BATCH ? generated.pending : assert.fail();
   assert.equal(new Set(pending.knowledgeItemIds).size, pending.knowledgeItemIds.length);
-  assert.ok(new Set(pending.answerKey.items.map((item) => item.correctCategory.id)).size >= 2);
   const assignments = pending.answerKey.items.map((item, index) => ({ itemId: item.id, categoryId: index === 0 ? categories.find((category) => category.id !== item.correctCategory.id)!.id : item.correctCategory.id }));
   const result = gradePendingExercise(pending, { exerciseId: "batch", type: ExerciseType.CLASSIFY_BATCH, answer: { assignments } });
   assert.equal(result.type, ExerciseType.CLASSIFY_BATCH); if (result.type !== ExerciseType.CLASSIFY_BATCH) return;
   assert.equal(result.correctCount, result.totalCount - 1); assert.equal(result.score, result.correctCount / result.totalCount);
   assert.throws(() => gradePendingExercise(pending, { exerciseId: "batch", type: ExerciseType.CLASSIFY_BATCH, answer: { assignments: assignments.slice(1) } }));
   assert.throws(() => gradePendingExercise(pending, { exerciseId: "batch", type: ExerciseType.CLASSIFY_BATCH, answer: { assignments: [{ ...assignments[0]!, itemId: 999 }, ...assignments.slice(1)] } }));
+});
+
+test("CLASSIFY_BATCH aceita um item e mantém todas as categorias como colunas", () => {
+  const singleItemSource: ExerciseSource = {
+    ...source,
+    subtopic: { knowledgeItems: source.subtopic.knowledgeItems.slice(0, 1) },
+  };
+  assert.equal(getEligibleTypes(singleItemSource).includes(ExerciseType.CLASSIFY_BATCH), true);
+  const generated = generateClassifyBatch(singleItemSource, { ...context("batch-one"), itemCount: 8 });
+  assert.equal(generated.presented.type, ExerciseType.CLASSIFY_BATCH);
+  if (generated.presented.type !== ExerciseType.CLASSIFY_BATCH || generated.pending.type !== ExerciseType.CLASSIFY_BATCH) return;
+  assert.equal(generated.presented.payload.items.length, 1);
+  assert.deepEqual(generated.presented.payload.categories.map((category) => category.id), categories.map((category) => category.id));
+  const onlyItem = generated.pending.answerKey.items[0]!;
+  const result = gradePendingExercise(generated.pending, { exerciseId: "batch-one", type: ExerciseType.CLASSIFY_BATCH, answer: { assignments: [{ itemId: onlyItem.id, categoryId: onlyItem.correctCategory.id }] } });
+  assert.equal(result.isCorrect, true);
+});
+
+test("CLASSIFY_BATCH permite todos os itens na mesma categoria sem repetir para completar o lote", () => {
+  const sameCategorySource: ExerciseSource = {
+    ...source,
+    categories: categories.slice(0, 2),
+    subtopic: { knowledgeItems: source.subtopic.knowledgeItems.slice(0, 3) },
+  };
+  assert.equal(getEligibleTypes(sameCategorySource).includes(ExerciseType.CLASSIFY_BATCH), true);
+  const generated = generateClassifyBatch(sameCategorySource, { ...context("batch-same"), itemCount: 8 });
+  assert.equal(generated.pending.type, ExerciseType.CLASSIFY_BATCH);
+  if (generated.pending.type !== ExerciseType.CLASSIFY_BATCH) return;
+  assert.equal(generated.pending.knowledgeItemIds.length, 3);
+  assert.equal(new Set(generated.pending.knowledgeItemIds).size, 3);
+  assert.equal(new Set(generated.pending.answerKey.items.map((item) => item.correctCategory.id)).size, 1);
+});
+
+test("CLASSIFY_BATCH continua inelegível com uma única categoria", () => {
+  const oneCategorySource: ExerciseSource = {
+    ...source,
+    categories: categories.slice(0, 1),
+    subtopic: { knowledgeItems: source.subtopic.knowledgeItems.slice(0, 1) },
+  };
+  assert.equal(getEligibleTypes(oneCategorySource).includes(ExerciseType.CLASSIFY_BATCH), false);
 });
 
 test("TRUE_FALSE gera versões verdadeira e falsa sem campo de gabarito", () => {

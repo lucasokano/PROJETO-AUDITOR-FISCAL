@@ -22,7 +22,7 @@ export function getEligibleTypes(source: ExerciseSource): ExerciseType[] {
   const eligible: ExerciseType[] = [];
 
   if (hasTwoCategories && items.length >= 1) eligible.push(ExerciseType.CLASSIFY_ONE, ExerciseType.TRUE_FALSE);
-  if (hasTwoCategories && items.length >= 4 && populatedCategories.length >= 2) eligible.push(ExerciseType.CLASSIFY_BATCH);
+  if (hasTwoCategories && items.length >= 1) eligible.push(ExerciseType.CLASSIFY_BATCH);
   if (hasTwoCategories && items.length >= 3 && populatedCategories.length >= 2 && populatedCategories.some((values) => items.length - values.length >= 2)) eligible.push(ExerciseType.SINGLE_CHOICE);
   if (hasTwoCategories && items.length >= 4 && populatedCategories.some((values) => values.length >= 2 && items.length - values.length >= 1)) eligible.push(ExerciseType.MULTIPLE_SELECT);
   return eligible;

@@ -3,7 +3,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { ExerciseRenderer } from "../components/exercises/ExerciseRenderer";
 import { useStudy } from "../contexts/StudyContext";
 import {
@@ -26,6 +26,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export function ExerciseSession() {
+  const [searchParams] = useSearchParams();
   const {
     disciplineId: routeDisciplineId,
     topicId: routeTopicId,
@@ -44,6 +45,11 @@ export function ExerciseSession() {
   const isContextualSession = Boolean(
     routeDisciplineId && routeTopicId && routeSubtopicId,
   );
+
+  const requestedType = Object.values(ExerciseType).find(
+    (type) => type === searchParams.get("type"),
+  );
+  const requestedGroupId = searchParams.get("groupId");
 
   const contextualDiscipline = isContextualSession
     ? findDiscipline(routeDisciplineId)
@@ -108,19 +114,25 @@ export function ExerciseSession() {
 
         if (!cancelled) {
           setGroups(availableGroups);
-          setGroupId(
-            availableGroups[0] &&
-              (!isContextualSession || availableGroups.length === 1)
-              ? String(availableGroups[0].id)
-              : "",
+          const requestedGroup = availableGroups.find(
+            (group) => String(group.id) === requestedGroupId,
           );
           const automaticallySelectedGroup =
-            availableGroups[0] &&
+            requestedGroup ??
+            (availableGroups[0] &&
               (!isContextualSession || availableGroups.length === 1)
               ? availableGroups[0]
-              : null;
+              : null);
+          setGroupId(
+            automaticallySelectedGroup
+              ? String(automaticallySelectedGroup.id)
+              : "",
+          );
           setExerciseType(
-            automaticallySelectedGroup?.eligibleTypes[0] ??
+            automaticallySelectedGroup && requestedType &&
+              automaticallySelectedGroup.eligibleTypes.includes(requestedType)
+              ? requestedType
+              : automaticallySelectedGroup?.eligibleTypes[0] ??
               ExerciseType.CLASSIFY_ONE,
           );
         }
@@ -140,7 +152,7 @@ export function ExerciseSession() {
     return () => {
       cancelled = true;
     };
-  }, [effectiveSubtopicId, isContextualSession]);
+  }, [effectiveSubtopicId, isContextualSession, requestedGroupId, requestedType]);
 
   const selectedGroup = groups.find(
     (group) => group.id === Number(groupId),
@@ -296,7 +308,9 @@ export function ExerciseSession() {
                   (group) => group.id === Number(event.target.value),
                 );
                 setExerciseType(
-                  nextGroup?.eligibleTypes[0] ?? ExerciseType.CLASSIFY_ONE,
+                  nextGroup && requestedType && nextGroup.eligibleTypes.includes(requestedType)
+                    ? requestedType
+                    : nextGroup?.eligibleTypes[0] ?? ExerciseType.CLASSIFY_ONE,
                 );
             }}
           >
