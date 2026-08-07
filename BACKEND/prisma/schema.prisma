@@ -50,10 +50,76 @@ model Subtopic {
   statements           Statement[]
   knowledgeItems       KnowledgeItem[]
   classificationGroups ClassificationGroup[]
+  examQuestions        ExamQuestion[]
 
   @@unique([topicId, slug])
   @@index([topicId])
   @@map("subtopics")
+}
+
+model ExamBoard {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(160)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  exams     Exam[]
+  questions ExamQuestion[]
+
+  @@map("exam_boards")
+}
+
+model Exam {
+  id        Int      @id @default(autoincrement())
+  boardId   Int      @map("board_id")
+  name      String   @db.VarChar(240)
+  year      Int?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  board     ExamBoard      @relation(fields: [boardId], references: [id], onDelete: Restrict)
+  questions ExamQuestion[]
+
+  @@unique([boardId, name, year])
+  @@index([boardId])
+  @@map("exams")
+}
+
+model ExamQuestion {
+  id          Int      @id @default(autoincrement())
+  subtopicId  Int      @map("subtopic_id")
+  boardId     Int?     @map("board_id")
+  examId      Int?     @map("exam_id")
+  text        String
+  explanation String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subtopic Subtopic             @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+  board    ExamBoard?           @relation(fields: [boardId], references: [id], onDelete: SetNull)
+  exam     Exam?                @relation(fields: [examId], references: [id], onDelete: SetNull)
+  options  ExamQuestionOption[]
+
+  @@index([subtopicId])
+  @@index([boardId])
+  @@index([examId])
+  @@map("exam_questions")
+}
+
+model ExamQuestionOption {
+  id           Int     @id @default(autoincrement())
+  questionId   Int     @map("question_id")
+  text         String
+  isCorrect    Boolean @default(false) @map("is_correct")
+  displayOrder Int     @default(0) @map("display_order")
+
+  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("exam_question_options")
 }
 
 model Statement {

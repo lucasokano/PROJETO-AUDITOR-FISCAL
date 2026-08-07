@@ -267,7 +267,7 @@ export function Sidebar({
               ? "sidebar-item-active"
               : ""
           }`}
-          onClick={() => navigate("/admin")}
+          onClick={() => navigate("/admin/structure")}
         >
           <Settings size={18} />
 

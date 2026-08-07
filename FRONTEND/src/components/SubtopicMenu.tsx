@@ -1,4 +1,14 @@
-import { BookOpen } from "lucide-react";
+import {
+  BookOpen,
+  Boxes,
+  Building2,
+  CirclePlus,
+  FilePlus2,
+  ListChecks,
+  Network,
+  Search,
+  Settings,
+} from "lucide-react";
 
 import {
   useLocation,
@@ -16,6 +26,91 @@ export function SubtopicMenu() {
     findTopic,
     isLoading,
   } = useStudy();
+
+  const adminTools = [
+    {
+      label: "Estrutura de conteúdo",
+      path: "/admin/structure",
+      icon: Network,
+    },
+    {
+      label: "Adicionar V/F",
+      path: "/admin/questions/true-false",
+      icon: ListChecks,
+    },
+    {
+      label: "Adicionar múltipla escolha",
+      path: "/admin/questions/multiple-choice",
+      icon: CirclePlus,
+    },
+    {
+      label: "Adicionar Prova",
+      path: "/admin/exams/new",
+      icon: FilePlus2,
+    },
+    {
+      label: "Cadastrar Banca",
+      path: "/admin/boards/new",
+      icon: Building2,
+    },
+    {
+      label: "Pesquisar questões",
+      path: "/admin/questions/search",
+      icon: Search,
+    },
+    {
+      label: "Conhecimento estruturado",
+      path: "/admin/knowledge",
+      icon: Boxes,
+    },
+  ];
+
+  if (location.pathname.startsWith("/admin")) {
+    return (
+      <aside className="subtopic-sidebar">
+        <div className="subtopic-sidebar-header">
+          <span className="subtopic-header-icon" aria-hidden="true">
+            <Settings size={16} />
+          </span>
+
+          <div>
+            <span className="subtopic-discipline-name">
+              Administração
+            </span>
+
+            <strong>Ferramentas</strong>
+          </div>
+        </div>
+
+        <nav className="subtopic-navigation" aria-label="Funcionalidades administrativas">
+          <div className="subtopic-navigation-heading">
+            <span>Funcionalidades</span>
+            <strong>{adminTools.length}</strong>
+          </div>
+
+          {adminTools.map((tool) => {
+            const Icon = tool.icon;
+
+            return (
+              <button
+                type="button"
+                key={tool.path}
+                className={`subtopic-button admin-tool-button ${
+                  location.pathname === tool.path
+                    ? "subtopic-button-active"
+                    : ""
+                }`}
+                onClick={() => navigate(tool.path)}
+              >
+                <Icon size={15} aria-hidden="true" />
+                <span>{tool.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+    );
+  }
 
   const pathParts = location.pathname
     .split("/")

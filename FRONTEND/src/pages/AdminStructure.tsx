@@ -5,7 +5,6 @@ import {
 } from "react";
 
 import { StudyStructureManager } from "../components/admin/DisciplineManager";
-import { AdminNavigation } from "../components/admin/AdminNavigation";
 import { useStudy } from "../contexts/StudyContext";
 
 import {
@@ -18,6 +17,12 @@ type FormMessage = {
   type: "success" | "error";
   text: string;
 };
+
+type StructureTab =
+  | "discipline"
+  | "topic"
+  | "subtopic"
+  | "edit";
 
 export function AdminStructure() {
   const {
@@ -58,6 +63,9 @@ export function AdminStructure() {
 
   const [message, setMessage] =
     useState<FormMessage | null>(null);
+
+  const [activeTab, setActiveTab] =
+    useState<StructureTab>("discipline");
 
   const selectedSubtopicDiscipline =
     useMemo(
@@ -207,17 +215,39 @@ export function AdminStructure() {
   }
 
   return (
-    <section className="admin-structure-page">
-      <AdminNavigation />
-      <header className="admin-structure-header">
-        <span>Administração</span>
+    <section className="admin-structure-page admin-tool-page">
+      <header className="admin-structure-header admin-tool-heading">
+        <span>Estrutura</span>
 
         <h1>Estrutura de conteúdo</h1>
 
         <p>
-          Crie e organize disciplinas, tópicos e subtópicos usados por todos os formatos de estudo.
+          Adicione conteúdo e organize a estrutura existente.
         </p>
       </header>
+
+      <div className="structure-tabs" role="tablist" aria-label="Ações da estrutura">
+        {([
+          ["discipline", "Nova disciplina"],
+          ["topic", "Novo tópico"],
+          ["subtopic", "Novo subtópico"],
+          ["edit", "Editar conteúdo"],
+        ] as const).map(([tab, label]) => (
+          <button
+            type="button"
+            role="tab"
+            key={tab}
+            aria-selected={activeTab === tab}
+            className={activeTab === tab ? "structure-tab-active" : ""}
+            onClick={() => {
+              setActiveTab(tab);
+              setMessage(null);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {message && (
         <div
@@ -231,9 +261,11 @@ export function AdminStructure() {
         </div>
       )}
 
+      {activeTab !== "edit" && (
       <div className="admin-create-grid">
+        {activeTab === "discipline" && (
         <form
-          className="admin-create-card"
+          className="admin-create-card admin-create-discipline"
           onSubmit={
             handleDisciplineSubmit
           }
@@ -264,12 +296,14 @@ export function AdminStructure() {
             type="submit"
             disabled={isSaving}
           >
-            Adicionar disciplina
+            Adicionar
           </button>
         </form>
+        )}
 
+        {activeTab === "topic" && (
         <form
-          className="admin-create-card"
+          className="admin-create-card admin-create-topic"
           onSubmit={handleTopicSubmit}
         >
           <div className="admin-create-number">
@@ -327,12 +361,14 @@ export function AdminStructure() {
             type="submit"
             disabled={isSaving}
           >
-            Adicionar tópico
+            Adicionar
           </button>
         </form>
+        )}
 
+        {activeTab === "subtopic" && (
         <form
-          className="admin-create-card"
+          className="admin-create-card admin-create-subtopic"
           onSubmit={
             handleSubtopicSubmit
           }
@@ -427,14 +463,18 @@ export function AdminStructure() {
             type="submit"
             disabled={isSaving}
           >
-            Adicionar subtópico
+            Adicionar
           </button>
         </form>
+        )}
       </div>
+      )}
 
-      <StudyStructureManager
-        onMessage={showMessage}
-      />
+      {activeTab === "edit" && (
+        <StudyStructureManager
+          onMessage={showMessage}
+        />
+      )}
     </section>
   );
 }

@@ -17,7 +17,6 @@ import {
   type MouseEvent,
 } from "react";
 import { Link } from "react-router-dom";
-import { AdminNavigation } from "../components/admin/AdminNavigation";
 import { useStudy } from "../contexts/StudyContext";
 import { getExerciseGroups } from "../services/exerciseApi";
 import {
@@ -435,11 +434,10 @@ export function AdminKnowledge() {
   }
 
   return (
-    <section className="page knowledge-admin-page">
-      <AdminNavigation />
-      <header className="knowledge-admin-heading">
+    <section className="page knowledge-admin-page admin-tool-page">
+      <header className="knowledge-admin-heading admin-tool-heading">
         <div>
-          <span>Administração</span>
+          <span>Conhecimento</span>
           <h2>Conhecimento estruturado</h2>
           <p>Construa a base reutilizável que gera os cinco formatos de exercícios dinâmicos.</p>
         </div>

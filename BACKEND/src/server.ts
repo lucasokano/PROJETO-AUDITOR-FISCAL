@@ -8,6 +8,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import { exerciseRoutes } from "./modules/exercises/exercise.routes.js";
 import { knowledgeRoutes } from "./modules/knowledge/knowledge.routes.js";
 import { studyRoutes } from "./modules/study/study.routes.js";
+import { examQuestionRoutes } from "./modules/examQuestions/exam-question.routes.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.get("/api/health", async (_request, response) => {
 app.use("/api/study", studyRoutes);
 app.use("/api/knowledge", knowledgeRoutes);
 app.use("/api/exercises", exerciseRoutes);
+app.use("/api/exam-questions", examQuestionRoutes);
 
 app.use((_request, response) => {
   response.status(404).json({

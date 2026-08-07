@@ -1,14 +1,16 @@
 import {
   BrowserRouter,
+  Navigate,
   Route,
   Routes,
 } from "react-router-dom";
 
 import { Layout } from "./components/Layout";
-import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminKnowledge } from "./pages/AdminKnowledge";
-import { AdminStatements } from "./pages/AdminStatements";
+import { AdminTrueFalse } from "./pages/AdminTrueFalse";
 import { AdminStructure } from "./pages/AdminStructure";
+import { AdminQuestionSearch } from "./pages/AdminQuestionSearch";
+import { AdminExamTool } from "./pages/AdminExamTool";
 import { Discipline } from "./pages/Discipline";
 import { Home } from "./pages/Home";
 import { ExerciseSession } from "./pages/ExerciseSession";
@@ -36,17 +38,42 @@ function App() {
 
           <Route
             path="/admin"
-            element={<AdminDashboard />}
+            element={<Navigate to="/admin/structure" replace />}
           />
 
           <Route
             path="/admin/statements"
-            element={<AdminStatements />}
+            element={<Navigate to="/admin/questions/true-false" replace />}
+          />
+
+          <Route
+            path="/admin/questions/true-false"
+            element={<AdminTrueFalse />}
+          />
+
+          <Route
+            path="/admin/questions/multiple-choice"
+            element={<AdminExamTool mode="questions" title="Adicionar múltipla escolha" description="Cadastre questões avulsas com até cinco alternativas." />}
+          />
+
+          <Route
+            path="/admin/exams/new"
+            element={<AdminExamTool mode="exams" title="Adicionar prova" description="Cadastre uma prova e associe-a a uma banca existente." />}
+          />
+
+          <Route
+            path="/admin/boards/new"
+            element={<AdminExamTool mode="boards" title="Cadastrar banca" description="Mantenha as bancas disponíveis para provas e questões." />}
           />
 
           <Route
             path="/admin/structure"
             element={<AdminStructure />}
+          />
+
+          <Route
+            path="/admin/questions/search"
+            element={<AdminQuestionSearch />}
           />
 
           <Route

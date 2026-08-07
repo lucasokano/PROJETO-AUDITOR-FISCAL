@@ -1,8 +1,11 @@
-input, select, textarea { box-sizing: border-box; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-background-subtle); color: var(--color-text); font: inherit; transition: border-color var(--transition), box-shadow var(--transition); }
-input, select { min-height: 40px; padding: 0 var(--space-3); } textarea { padding: var(--space-3); resize: vertical; }
-input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: var(--color-border-strong); }
-input:focus, select:focus, textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-soft); outline: none; }
-input:disabled, select:disabled, textarea:disabled { color: var(--color-text-secondary); cursor: not-allowed; opacity: .6; }
+input, select, textarea { box-sizing: border-box; color: #e5e7eb; border: 1px solid #343b46; border-radius: 6px; background: #171a20; box-shadow: none; font: inherit; outline: none; transition: border-color var(--transition), box-shadow var(--transition); }
+input, select { min-height: 36px; padding: 0 11px; } textarea { min-height: 88px; padding: 9px 11px; line-height: 1.5; resize: vertical; }
+input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: #4a5564; }
+input:focus, select:focus, textarea:focus { border-color: #667085; box-shadow: 0 0 0 3px rgb(148 163 184 / 8%); outline: none; }
+input:disabled, select:disabled, textarea:disabled { color: var(--color-text-secondary); cursor: not-allowed; opacity: .45; }
+input::placeholder, textarea::placeholder { color: #7f8b9b; font-size: 12px; font-weight: 400; opacity: 1; }
+select:required:invalid, select:has(option:checked[value=""]) { color: #7f8b9b; font-size: 12px; font-weight: 400; }
+select option { color: #e5e7eb; background: #171a20; } select option[value=""] { color: #7f8b9b; }
 .ui-input { width: 100%; }.ui-search-input { padding-left: var(--space-4); }.ui-textarea { min-height: 96px; }
 .ui-checkbox { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }.ui-checkbox input { min-height: auto; }
 label > span, legend { color: var(--color-text-secondary); font-size: .8rem; font-weight: 650; }

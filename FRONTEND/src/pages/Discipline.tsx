@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -15,6 +16,7 @@ import { useParams } from "react-router-dom";
 
 import { StatementCard } from "../components/StatementCard";
 import { EmbeddedExerciseSession } from "../components/exercises/EmbeddedExerciseSession";
+import { RealMultipleChoiceSession, type RealQuestionProgress } from "../components/exercises/RealMultipleChoiceSession";
 import { useStudy } from "../contexts/StudyContext";
 import { getExerciseGroups } from "../services/exerciseApi";
 import {
@@ -105,6 +107,11 @@ export function Discipline() {
 
   const [batchResult, setBatchResult] =
     useState<ClassifyBatchResult | null>(null);
+  const [realQuestionProgress, setRealQuestionProgress] =
+    useState<RealQuestionProgress>({ total: 0, answered: 0, correct: 0 });
+  const handleRealQuestionProgress = useCallback((progress: RealQuestionProgress) => {
+    setRealQuestionProgress(progress);
+  }, []);
 
   const answerInFlightRef = useRef(false);
   const activeSubtopicIdRef = useRef<
@@ -122,6 +129,7 @@ useEffect(() => {
   setActiveExercise(null);
   setIsRealMultipleChoiceActive(false);
   setBatchResult(null);
+  setRealQuestionProgress({ total: 0, answered: 0, correct: 0 });
 
   if (!subtopic) {
     setIsLoading(false);
@@ -240,19 +248,21 @@ useEffect(() => {
     activeExercise?.type === ExerciseType.CLASSIFY_BATCH;
   const performanceTotal = isBatchExerciseActive
     ? batchResult?.totalCount ?? 0
-    : total;
+    : isRealMultipleChoiceActive ? realQuestionProgress.total : total;
   const performanceCorrect = isBatchExerciseActive
     ? batchResult?.correctCount ?? 0
-    : correct;
+    : isRealMultipleChoiceActive ? realQuestionProgress.correct : correct;
   const performanceIncorrect = isBatchExerciseActive
     ? performanceTotal - performanceCorrect
-    : incorrect;
+    : isRealMultipleChoiceActive ? realQuestionProgress.answered - realQuestionProgress.correct : incorrect;
   const performanceAnswered = isBatchExerciseActive
     ? batchResult?.totalCount ?? 0
-    : answered;
+    : isRealMultipleChoiceActive ? realQuestionProgress.answered : answered;
   const performancePercentage = isBatchExerciseActive
     ? Math.round((batchResult?.score ?? 0) * 100)
-    : percentage;
+    : isRealMultipleChoiceActive
+      ? realQuestionProgress.answered > 0 ? Math.round((realQuestionProgress.correct / realQuestionProgress.answered) * 100) : 0
+      : percentage;
 
   const structuredExerciseTabs = useMemo(
     () =>
@@ -394,7 +404,7 @@ useEffect(() => {
               setIsRealMultipleChoiceActive(true);
             }}
           >
-            Questões reais múltipla escolha
+            Questões de prova
           </button>
 
           {structuredExerciseTabs.map(({ type, groupId }) => (
@@ -427,10 +437,7 @@ useEffect(() => {
           }
         />
       ) : isRealMultipleChoiceActive ? (
-        <section className="real-multiple-choice-empty">
-          <h3>Questões reais múltipla escolha</h3>
-          <p>Nenhuma questão disponível neste subtópico.</p>
-        </section>
+        subtopic && <RealMultipleChoiceSession subtopicId={subtopic.id} onProgressChange={handleRealQuestionProgress} />
       ) : <div className="discipline-content">
         <div className="statements-area">
           <div className="statements-table">
@@ -570,7 +577,7 @@ useEffect(() => {
 
         <div className="performance-metrics">
           <div className="performance-item">
-            <span><FileText size={15} /> {isBatchExerciseActive ? "Total de itens" : "Total de afirmações"}</span>
+            <span><FileText size={15} /> {isBatchExerciseActive ? "Total de itens" : isRealMultipleChoiceActive ? "Total de questões" : "Total de afirmações"}</span>
             <strong>{performanceTotal}</strong>
           </div>
 
@@ -590,7 +597,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {!isBatchExerciseActive && answered > 0 && (
+        {!isBatchExerciseActive && !isRealMultipleChoiceActive && answered > 0 && (
           <button type="button" className="restart-button" onClick={restartSubtopic}>
             Reiniciar subtópico
           </button>

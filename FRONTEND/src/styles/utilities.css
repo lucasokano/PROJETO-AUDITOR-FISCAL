@@ -452,6 +452,27 @@ body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSyst
   }
 }
 
+.admin-tool-button {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.admin-tool-button svg {
+  color: var(--color-text-secondary);
+  flex: 0 0 auto;
+}
+
+.admin-tool-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-tool-button.subtopic-button-active svg {
+  color: var(--color-primary-hover);
+}
+
 /* Compact productivity sidebar */
 .sidebar {
   width: var(--sidebar-width);
@@ -1406,5 +1427,830 @@ body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSyst
   .discipline-workspace > .discipline-page {
     grid-column: 1;
     grid-row: 2;
+  }
+}
+
+/* Unified administrative tools */
+.admin-tool-page {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #171b21;
+}
+
+.admin-tool-heading {
+  min-height: 74px;
+  margin: 0 0 18px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-tool-heading h1,
+.admin-tool-heading h2 {
+  margin: 3px 0 5px;
+  color: var(--color-text);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.admin-tool-heading p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-tool-page :where(
+  .admin-create-card,
+  .admin-manager-section,
+  .statement-editor,
+  .statement-filters,
+  .knowledge-structure-panel,
+  .knowledge-panel,
+  .knowledge-readiness
+) {
+  border-color: var(--color-border);
+  border-radius: 8px;
+  background: #1c2026;
+  box-shadow: none;
+}
+
+.admin-tool-page :where(input, select, textarea) {
+  border-color: var(--color-border);
+  background: #171b21;
+}
+
+/* Statement lists use a single lower divider instead of boxed rows. */
+.statements-page .statement-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #1c2026;
+}
+
+.statements-page .statement-card {
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: #1c2026;
+  transform: none;
+}
+
+.statements-page .statement-card:nth-child(odd) {
+  background: #20252c;
+}
+
+.statements-page .statement-card:last-child {
+  border-bottom: 0;
+}
+
+.statements-page .statement-card:hover {
+  border-bottom-color: var(--color-primary);
+  background: inherit;
+  transform: none;
+}
+
+.discipline-workspace .statement-row {
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.discipline-workspace .statement-row:hover {
+  border: 0;
+  border-bottom: 1px solid var(--color-primary);
+  box-shadow: none;
+}
+
+.discipline-workspace .statement-row:last-child,
+.discipline-workspace .statement-row:last-child:hover {
+  border-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .admin-tool-page {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .admin-tool-heading {
+    min-height: 0;
+  }
+}
+
+/* Administrative fields — structure form is the canonical input style */
+.admin-tool-page :where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="search"]),
+  select,
+  textarea
+) {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 11px;
+  color: #e5e7eb;
+  border: 1px solid #343b46;
+  border-radius: 6px;
+  background: #171a20;
+  box-shadow: none;
+  font: inherit;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.admin-tool-page :where(textarea) {
+  min-height: 88px;
+  padding-block: 9px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.admin-tool-page :where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="search"]),
+  select,
+  textarea
+):focus {
+  border-color: #667085;
+  box-shadow: 0 0 0 3px rgb(148 163 184 / 8%);
+}
+
+.admin-tool-page :where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="search"]),
+  textarea
+)::placeholder {
+  color: #7f8b9b;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 1;
+}
+
+.admin-tool-page select:required:invalid,
+.admin-tool-page select:has(option:checked[value=""]) {
+  color: #7f8b9b;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.admin-tool-page select option {
+  color: #e5e7eb;
+}
+
+.admin-tool-page select option[value=""] {
+  color: #7f8b9b;
+}
+
+/* Final form normalization: prevents page-level legacy rules from drifting. */
+body :is(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea
+) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 11px;
+  color: #e5e7eb;
+  border: 1px solid #343b46;
+  border-radius: 6px;
+  background: #171a20;
+  box-shadow: none;
+  font: inherit;
+  outline: none;
+}
+
+:where(textarea) {
+  min-height: 88px;
+  padding-block: 9px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+:where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea
+):hover:not(:disabled) {
+  border-color: #4a5564;
+}
+
+:where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea
+):focus {
+  border-color: #667085;
+  box-shadow: 0 0 0 3px rgb(148 163 184 / 8%);
+}
+
+:where(input, textarea)::placeholder {
+  color: #7f8b9b;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 1;
+}
+
+select:required:invalid,
+select:has(option:checked[value=""]) {
+  color: #7f8b9b;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+select option { color: #e5e7eb; background: #171a20; }
+select option[value=""] { color: #7f8b9b; }
+
+.admin-tool-page :where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="search"]),
+  textarea
+)::placeholder {
+  color: #687384;
+  opacity: 1;
+}
+
+.admin-tool-page :where(input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.admin-tool-page select {
+  color-scheme: dark;
+}
+
+/* Minimal content-structure creation */
+.admin-structure-page .admin-structure-header > span { display: block; }
+
+.structure-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.structure-tabs button {
+  min-height: 39px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  color: var(--color-text-secondary);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.structure-tabs button:hover {
+  color: var(--color-text);
+  background: #20252c;
+}
+
+.structure-tabs .structure-tab-active {
+  color: var(--color-primary-hover);
+  border-bottom-color: var(--color-primary);
+}
+
+.admin-structure-page .admin-create-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #1c2026;
+}
+
+.admin-structure-page .admin-create-card {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: 150px repeat(3, minmax(0, 1fr)) 100px;
+  align-items: end;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-structure-page .admin-create-grid .admin-create-card {
+  border-bottom: 0;
+}
+
+.admin-structure-page .admin-create-card:last-child { border-bottom: 0; }
+.admin-structure-page .admin-create-number { display: none; }
+
+.admin-structure-page .admin-create-card h2 {
+  align-self: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-structure-page .admin-create-card label { gap: 5px; }
+.admin-structure-page .admin-create-card label span { font-size: 10px; }
+
+.admin-structure-page .admin-create-card input,
+.admin-structure-page .admin-create-card select,
+.admin-structure-page .admin-create-card button {
+  min-height: 36px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.admin-structure-page .admin-create-card button {
+  width: 100%;
+  margin: 0;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+}
+
+.admin-structure-page .admin-create-card button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.admin-structure-page .admin-create-discipline label { grid-column: 2 / 5; }
+.admin-structure-page .admin-create-discipline button { grid-column: 5; }
+.admin-structure-page .admin-create-topic label:last-of-type { grid-column: 3 / 5; }
+
+@media (max-width: 900px) {
+  .admin-structure-page .admin-create-card {
+    grid-template-columns: 130px minmax(0, 1fr) 90px;
+  }
+
+  .admin-structure-page .admin-create-card label,
+  .admin-structure-page .admin-create-discipline label,
+  .admin-structure-page .admin-create-topic label:last-of-type { grid-column: 2; }
+
+  .admin-structure-page .admin-create-card button,
+  .admin-structure-page .admin-create-discipline button {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    align-self: stretch;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-structure-page .admin-create-card {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .admin-structure-page .admin-create-card h2,
+  .admin-structure-page .admin-create-card label,
+  .admin-structure-page .admin-create-discipline label,
+  .admin-structure-page .admin-create-topic label:last-of-type,
+  .admin-structure-page .admin-create-card button,
+  .admin-structure-page .admin-create-discipline button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* Unified question search */
+.statements-page > .statement-filters { display: none; }
+.question-search-page { display: grid; gap: 0; }
+.question-search-heading span { color: var(--color-primary-hover); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.question-search-tabs { margin-bottom: 14px; }
+.question-search-bar {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  min-height: 44px; margin-bottom: 14px; padding: 0 12px; border: 1px solid var(--color-border);
+  border-radius: 7px; background: #1c2026; color: var(--color-text-secondary);
+}
+
+/* Focused true/false creation */
+.true-false-page { display: grid; gap: 0; }
+.admin-form-eyebrow { color: var(--color-primary-hover); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.true-false-tabs { margin-bottom: 14px; }
+.true-false-editor { padding: 16px; }
+.true-false-editor .admin-form { gap: 16px; }
+.true-false-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.true-false-answer { display: flex; gap: 20px; margin: 0; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 7px; background: #171b21; }
+.true-false-answer legend { padding: 0 6px; color: var(--color-text-secondary); font-size: 11px; font-weight: 600; }
+.true-false-answer label { display: flex; align-items: center; gap: 7px; color: var(--color-text); font-size: 12px; }
+.true-false-answer input { accent-color: var(--color-primary); }
+.true-false-bulk-help { display: flex; align-items: center; gap: 8px; color: var(--color-text-secondary); font-size: 11px; }
+.true-false-bulk-help code { padding: 4px 7px; border: 1px solid var(--color-border); border-radius: 5px; background: #171b21; color: var(--color-primary-hover); }
+.true-false-bulk-help label { margin-left: auto; padding: 6px 9px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; }
+.true-false-bulk-help input { display: none; }
+.true-false-bulk-status { display: flex; align-items: center; gap: 12px; color: var(--color-text-secondary); font-size: 11px; }
+.true-false-bulk-status .has-errors { color: #f87171; }
+.true-false-bulk-status small { margin-left: auto; color: #f87171; }
+@media (max-width: 700px) {
+  .true-false-context { grid-template-columns: 1fr; }
+  .true-false-bulk-help { align-items: flex-start; flex-wrap: wrap; }
+  .true-false-bulk-help label { margin-left: 0; }
+}
+
+/* Administrative visual system — aligned with question search */
+.admin-tool-page {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+
+.admin-tool-page > :where(
+  .admin-tool-heading,
+  .admin-structure-header,
+  .knowledge-admin-heading
+) {
+  min-height: 76px;
+  margin: 0 0 14px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-tool-page > :where(
+  .admin-tool-heading,
+  .admin-structure-header,
+  .knowledge-admin-heading
+) :where(h1, h2) {
+  margin: 3px 0 5px;
+  color: var(--color-text);
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.admin-tool-page > :where(
+  .admin-tool-heading,
+  .admin-structure-header,
+  .knowledge-admin-heading
+) p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-tool-page > :where(
+  .admin-tool-heading,
+  .admin-structure-header,
+  .knowledge-admin-heading
+) :where(
+  .admin-form-eyebrow,
+  span:first-child
+) {
+  color: var(--color-primary-hover);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.admin-tool-page > .structure-tabs,
+.admin-tool-page > .true-false-tabs,
+.admin-tool-page > .question-search-tabs {
+  margin: 0 0 14px;
+}
+
+.admin-tool-page > :where(
+  .admin-message,
+  .knowledge-message,
+  .form-message
+) {
+  margin: 0 0 14px;
+}
+
+.true-false-editor,
+.exam-question-form,
+.exam-admin-inline-form,
+.admin-structure-page .admin-create-grid,
+.knowledge-structure-panel,
+.knowledge-readiness,
+.knowledge-panel,
+.structure-manager {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #1c2026;
+  box-shadow: none;
+}
+
+.true-false-editor,
+.exam-question-form,
+.exam-admin-inline-form,
+.knowledge-structure-panel,
+.knowledge-panel {
+  padding: 14px;
+}
+
+.exam-question-admin {
+  gap: 14px;
+}
+
+.exam-question-form .admin-submit-button,
+.true-false-editor .admin-submit-button,
+.exam-admin-inline-form > button {
+  min-height: 36px;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 12px;
+}
+
+.exam-question-form .admin-submit-button:hover:not(:disabled),
+.true-false-editor .admin-submit-button:hover:not(:disabled),
+.exam-admin-inline-form > button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.exam-admin-list,
+.question-search-results,
+.structure-manager {
+  overflow: hidden;
+}
+
+.exam-admin-list > div,
+.structure-tree-row {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.exam-admin-list > div:hover,
+.structure-tree-row:hover {
+  border-bottom-color: var(--color-primary);
+}
+
+.admin-structure-page .admin-create-grid {
+  margin-bottom: 14px;
+}
+
+.admin-structure-page .admin-create-card {
+  background: #1c2026;
+}
+
+.knowledge-admin-page {
+  gap: 14px;
+}
+
+.knowledge-admin-page > .knowledge-admin-heading,
+.knowledge-admin-page > .knowledge-structure-panel,
+.knowledge-admin-page > .knowledge-readiness,
+.knowledge-admin-page .knowledge-panel {
+  margin-bottom: 0;
+}
+
+.knowledge-structure-panel,
+.exam-question-context,
+.true-false-context {
+  gap: 10px;
+}
+
+.admin-tool-page :where(input, select, textarea):focus {
+  border-color: var(--color-primary-border);
+  box-shadow: none;
+}
+
+@media (max-width: 700px) {
+  .admin-tool-page > :where(
+    .admin-tool-heading,
+    .admin-structure-header,
+    .knowledge-admin-heading
+  ) {
+    min-height: 0;
+  }
+
+  .true-false-editor,
+  .exam-question-form,
+  .exam-admin-inline-form,
+  .knowledge-structure-panel,
+  .knowledge-panel {
+    padding: 12px;
+  }
+}
+.question-search-bar input { min-width: 0; border: 0 !important; background: transparent !important; box-shadow: none !important; outline: 0; color: var(--color-text); }
+.question-search-bar span { font-size: 11px; white-space: nowrap; }
+.question-search-results { overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; background: #1c2026; }
+.question-search-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 30px; align-items: center; gap: 14px;
+  min-height: 66px; padding: 10px 12px; border-bottom: 1px solid var(--color-border); background: #1c2026;
+}
+.question-search-row:nth-child(odd) { background: #20252c; }
+.question-search-row:last-child { border-bottom: 0; }
+.question-search-row:hover { border-bottom-color: var(--color-primary); }
+.question-search-row > div { min-width: 0; }
+.question-search-row span, .question-search-row small { display: block; overflow: hidden; color: var(--color-text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.question-search-row p { margin: 4px 0; color: var(--color-text); font-size: 13px; line-height: 1.4; }
+.question-search-row > strong { color: var(--color-text-secondary); font-size: 11px; font-weight: 600; }
+.question-search-row > button { display: grid; width: 30px; height: 30px; place-items: center; color: var(--color-text-secondary); border: 0; border-radius: 5px; background: transparent; cursor: pointer; }
+.question-search-row > button:hover { color: #f87171; background: rgb(239 68 68 / 10%); }
+.question-search-empty { padding: 38px 16px; color: var(--color-text-secondary); text-align: center; font-size: 12px; }
+@media (max-width: 600px) {
+  .question-search-bar { grid-template-columns: auto minmax(0, 1fr); }
+  .question-search-bar span { display: none; }
+  .question-search-row { grid-template-columns: minmax(0, 1fr) 30px; }
+  .question-search-row > strong { display: none; }
+}
+
+/* Exam-board questions */
+.exam-tool-page { display: grid; gap: 0; }
+.exam-tool-heading span { color: var(--color-primary-hover); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.statement-type-tabs { margin-bottom: 0; }
+.exam-question-admin { display: grid; gap: 16px; }
+.exam-question-admin > .structure-tabs { margin-bottom: 0; }
+.exam-admin-inline-form,
+.exam-question-form {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #1c2026;
+}
+.exam-admin-inline-form { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; }
+.exam-question-form label,
+.exam-admin-inline-form label { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.exam-question-form label > span,
+.exam-admin-inline-form label > span { color: var(--color-text-secondary); font-size: 11px; font-weight: 600; }
+.exam-question-form :where(input:not([type="radio"]), select, textarea),
+.exam-admin-inline-form :where(input, select) {
+  width: 100%; min-height: 38px; padding: 8px 10px; color: var(--color-text);
+  border: 1px solid var(--color-border); border-radius: 6px; background: #171b21;
+}
+.exam-admin-inline-form > button { min-height: 38px; padding: 0 14px; color: var(--color-on-primary); border: 0; border-radius: 6px; background: var(--color-primary); font-weight: 700; }
+.exam-question-context { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.exam-options { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; }
+.exam-options label { display: grid; min-height: 48px; grid-template-columns: auto minmax(0, 1fr) 92px; align-items: center; gap: 10px; padding: 5px 9px; border: 1px solid var(--color-border); border-radius: 7px; background: #171b21; cursor: pointer; }
+.exam-options label::after { content: "Marcar correta"; color: var(--color-text-secondary); font-size: 10px; text-align: right; }
+.exam-options label:has(input[type="radio"]:checked) { border-color: var(--color-primary); box-shadow: inset 2px 0 0 var(--color-primary); }
+.exam-options label:has(input[type="radio"]:checked)::after { content: "Correta"; color: var(--color-primary-hover); font-weight: 700; }
+.exam-options input[type="radio"] { width: 17px; height: 17px; accent-color: var(--color-primary); cursor: pointer; }
+.exam-option-actions { display: none; }
+.exam-option-actions button { min-height: 32px; padding: 0 10px; color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: 6px; background: #20252c; cursor: pointer; }
+.exam-option-actions button:hover:not(:disabled) { color: var(--color-text); border-color: var(--color-primary-border); }
+.exam-option-actions button:disabled { cursor: not-allowed; opacity: .45; }
+.exam-option-actions span { margin-left: auto; color: var(--color-text-secondary); font-size: 11px; }
+.exam-admin-list { overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; }
+.exam-tool-page .exam-question-list { display: none; }
+.exam-admin-list > div { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 44px; padding: 8px 12px; border-bottom: 1px solid var(--color-border); background: #1c2026; font-size: 12px; }
+.exam-admin-list > div:last-child { border-bottom: 0; }
+.exam-admin-list > div > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.exam-admin-list button { color: var(--color-danger, #f87171); border: 0; background: transparent; cursor: pointer; }
+@media (max-width: 900px) {
+  .exam-question-context { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .exam-admin-inline-form { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .exam-question-context, .exam-options, .exam-admin-inline-form { grid-template-columns: 1fr; }
+}
+
+/* Keep every administrative field identical to Structure, after legacy rules. */
+.admin-tool-page :where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="search"]),
+  select,
+  textarea
+) {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 11px;
+  color: #e5e7eb;
+  border: 1px solid #343b46;
+  border-radius: 6px;
+  background: #171a20;
+  box-shadow: none;
+  font: inherit;
+  outline: none;
+}
+
+.admin-tool-page textarea {
+  min-height: 88px;
+  padding-block: 9px;
+  line-height: 1.5;
+}
+
+.admin-tool-page :where(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="search"]),
+  select,
+  textarea
+):focus {
+  border-color: #667085;
+  box-shadow: 0 0 0 3px rgb(148 163 184 / 8%);
+}
+
+/* System-wide enforcement must remain last in the cascade. */
+body :is(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea
+) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 11px;
+  color: #e5e7eb;
+  border: 1px solid #343b46;
+  border-radius: 6px;
+  background: #171a20;
+  box-shadow: none;
+  font: inherit;
+  outline: none;
+}
+
+body textarea:not([data-single-line]) { min-height: 88px; padding-block: 9px; line-height: 1.5; resize: vertical; }
+
+body :is(
+  input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea
+):focus {
+  border-color: #667085;
+  box-shadow: 0 0 0 3px rgb(148 163 184 / 8%);
+}
+
+:where(input, textarea)::placeholder { color: #7f8b9b; font-size: 12px; font-weight: 400; opacity: 1; }
+select:required:invalid, select:has(option:checked[value=""]) { color: #7f8b9b; font-size: 12px; font-weight: 400; }
+select option { color: #e5e7eb; background: #171a20; }
+select option[value=""] { color: #7f8b9b; }
+
+/* Integrated search fields intentionally use their parent as the visible control. */
+.question-search-bar input {
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Real multiple-choice study session */
+.real-question-session,
+.real-question-state {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #1c2026;
+}
+.real-question-session > header { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 44px; padding: 0 13px; border-bottom: 1px solid var(--color-border); background: #171b21; }
+.real-question-session > header span { color: var(--color-primary-hover); font-size: 11px; font-weight: 700; }
+.real-question-session > header small { overflow: hidden; color: var(--color-text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.real-question-text { margin: 0; padding: 18px 14px; color: var(--color-text); font-size: 14px; line-height: 1.6; }
+.real-question-options { display: grid; gap: 0; border-top: 1px solid var(--color-border); }
+.real-question-options button { display: grid; min-height: 48px; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 8px; padding: 8px 13px; color: var(--color-text); border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; background: #1c2026; text-align: left; cursor: pointer; }
+.real-question-options button:nth-child(odd) { background: #20252c; }
+.real-question-options button:last-child { border-bottom: 0; }
+.real-question-options button:hover:not(:disabled) { border-bottom-color: var(--color-primary); }
+.real-question-options button strong { display: grid; width: 25px; height: 25px; place-items: center; color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: 50%; font-size: 11px; }
+.real-question-options button span { font-size: 12px; line-height: 1.45; }
+.real-question-options .real-option-selected { box-shadow: inset 2px 0 0 var(--color-primary); }
+.real-question-options .real-option-selected strong { color: var(--color-on-primary); border-color: var(--color-primary); background: var(--color-primary); }
+.real-question-options .real-option-correct { box-shadow: inset 3px 0 0 #22c55e; }
+.real-question-options .real-option-correct strong { color: #dcfce7; border-color: #22c55e; background: #166534; }
+.real-question-options .real-option-wrong { box-shadow: inset 3px 0 0 #ef4444; }
+.real-question-options .real-option-wrong strong { color: #fee2e2; border-color: #ef4444; background: #7f1d1d; }
+.real-question-feedback { margin: 12px 14px 0; padding: 10px 12px; border-left: 2px solid; background: #171b21; font-size: 12px; }
+.real-question-feedback.is-correct { color: #86efac; border-color: #22c55e; }
+.real-question-feedback.is-wrong { color: #fca5a5; border-color: #ef4444; }
+.real-question-feedback p { margin: 5px 0 0; color: var(--color-text-secondary); line-height: 1.5; }
+.real-question-session > footer { display: flex; justify-content: flex-end; padding: 14px; }
+.real-question-session > footer .admin-submit-button { margin: 0; }
+.real-question-state { padding: 38px 18px; color: var(--color-text-secondary); text-align: center; }
+.real-question-state h3 { margin: 0 0 6px; color: var(--color-text); font-size: 15px; }
+.real-question-state p { margin: 0 0 14px; font-size: 12px; }
+.real-question-error { color: #fca5a5; }
+
+/* Fixed desktop navigation avoids sticky sub-pixel movement during scroll. */
+@media (min-width: 801px) {
+  .application > .sidebar,
+  .application > .subtopic-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .application > .sidebar {
+    left: 0;
+    z-index: 32;
+  }
+
+  .application > .subtopic-sidebar {
+    left: var(--sidebar-width);
+    z-index: 31;
+  }
+
+  .application:has(> .sidebar-open):not(:has(> .subtopic-sidebar)) > .main-container {
+    margin-left: var(--sidebar-width);
+  }
+
+  .application:has(> .subtopic-sidebar) > .main-container {
+    margin-left: calc(var(--sidebar-width) + 224px);
+  }
+}
+
+@media (min-width: 801px) and (max-width: 1100px) {
+  .application > .subtopic-sidebar {
+    left: 232px;
+  }
+
+  .application:has(> .sidebar-open):not(:has(> .subtopic-sidebar)) > .main-container {
+    margin-left: 232px;
+  }
+
+  .application:has(> .subtopic-sidebar) > .main-container {
+    margin-left: 436px;
   }
 }
