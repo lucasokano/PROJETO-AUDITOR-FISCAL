@@ -443,6 +443,7 @@ useEffect(() => {
           <div className="statements-table">
             <div className="statements-header">
               <div className="statement-score-cell">
+                <div className="mobile-performance-rate"><strong>{performancePercentage}%</strong></div>
                 <div className="performance-kicks" role="list" aria-label="Sequência de respostas">
                   {Array.from({ length: total }, (_, index) => {
                     const answer = answers[index];

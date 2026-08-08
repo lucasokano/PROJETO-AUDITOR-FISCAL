@@ -27,6 +27,7 @@ export function StatementCard({
           title="Verdadeiro"
         >
           <Check size={21} />
+          <span>CERTO</span>
         </button>
         <button
           type="button"
@@ -37,6 +38,7 @@ export function StatementCard({
           title="Falso"
         >
           <X size={21} />
+          <span>ERRADO</span>
         </button>
       </div>
     </article>

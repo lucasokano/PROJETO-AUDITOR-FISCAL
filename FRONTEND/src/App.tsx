@@ -5,7 +5,7 @@ import {
   Routes,
 } from "react-router-dom";
 
-import { Layout } from "./components/Layout";
+import { ProtectedLayout } from "./components/ProtectedLayout";
 import { AdminKnowledge } from "./pages/AdminKnowledge";
 import { AdminTrueFalse } from "./pages/AdminTrueFalse";
 import { AdminStructure } from "./pages/AdminStructure";
@@ -15,12 +15,14 @@ import { Discipline } from "./pages/Discipline";
 import { Home } from "./pages/Home";
 import { ExerciseSession } from "./pages/ExerciseSession";
 import { Review } from "./pages/Review";
+import { Login } from "./pages/Login";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedLayout />}>
           <Route
             path="/"
             element={<Home />}

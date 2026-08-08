@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import { useNavigate } from "react-router-dom";
+import { ArrowRight, BookOpenCheck, CalendarClock, Target } from "lucide-react";
 
 import {
   getDashboard,
@@ -137,57 +138,30 @@ export function Home() {
     );
   }
 
+  const totalStatements = dashboard.disciplines.reduce((sum, item) => sum + item.totalStatements, 0);
+  const answeredStatements = dashboard.disciplines.reduce((sum, item) => sum + item.answeredStatements, 0);
+  const overallPercentage = totalStatements > 0 ? Math.round((answeredStatements / totalStatements) * 100) : 0;
+  const forecastTotal = dashboard.forecast.reduce((sum, day) => sum + day.count, 0);
+
   return (
-    <section className="page home-page">
+    <section className="page home-page performance-dashboard">
       <header className="home-heading">
-        <span className="home-eyebrow">
-          Painel de estudos
-        </span>
-
-        <h2>Visão geral</h2>
-
-        <p>
-          Acompanhe suas revisões e escolha
-          onde ampliar seus conhecimentos.
-        </p>
+        <span className="home-eyebrow">Painel de estudos</span>
+        <h2>Desempenho</h2>
+        <p>Acompanhe o conteúdo estudado e a carga de revisões dos próximos dias.</p>
       </header>
 
-      <section className="home-review-card">
-        <div className="home-review-summary">
-          <span>
-            Revisões pendentes
-          </span>
-
-          <strong>
-            {dashboard.dueReviews}
-          </strong>
-        </div>
-
-        <button
-  type="button"
-  className="home-review-button"
-  disabled={dashboard.dueReviews === 0}
-  onClick={() => navigate("/revisao")}
->
-  {dashboard.dueReviews > 0
-    ? "Revisar agora"
-    : "Nenhuma revisão pendente"}
-</button>
+      <section className="performance-summary-grid">
+        <article className="performance-summary-card performance-summary-primary"><span className="performance-summary-icon"><CalendarClock size={17} /></span><div><small>Revisões pendentes</small><strong>{dashboard.dueReviews}</strong></div><button type="button" disabled={dashboard.dueReviews === 0} onClick={() => navigate("/revisao")} aria-label="Abrir revisões"><ArrowRight size={16} /></button></article>
+        <article className="performance-summary-card"><span className="performance-summary-icon"><Target size={17} /></span><div><small>Progresso geral</small><strong>{overallPercentage}%</strong></div></article>
+        <article className="performance-summary-card"><span className="performance-summary-icon"><BookOpenCheck size={17} /></span><div><small>Afirmações estudadas</small><strong>{answeredStatements}<em>/{totalStatements}</em></strong></div></article>
+        <article className="performance-summary-card"><span className="performance-summary-icon"><CalendarClock size={17} /></span><div><small>Próximos 7 dias</small><strong>{forecastTotal}</strong></div></article>
       </section>
 
-      <section className="home-panel">
+      <div className="performance-dashboard-grid">
+      <section className="home-panel performance-forecast-panel">
         <div className="home-panel-heading">
-          <div>
-            <h3>
-              Próximos 7 dias
-            </h3>
-
-            <p>
-              Previsão da quantidade de
-              afirmações que entrarão em
-              revisão.
-            </p>
-          </div>
+          <div><span>Agenda</span><h3>Previsão de revisões</h3><p>Distribuição para os próximos sete dias.</p></div>
         </div>
 
         <div className="forecast-list">
@@ -234,18 +208,9 @@ export function Home() {
         </div>
       </section>
 
-      <section className="home-panel">
+      <section className="home-panel performance-disciplines-panel">
         <div className="home-panel-heading">
-          <div>
-            <h3>
-              Progresso das disciplinas
-            </h3>
-
-            <p>
-              Percentual de afirmações
-              respondidas ao menos uma vez.
-            </p>
-          </div>
+          <div><span>Conteúdo</span><h3>Progresso por disciplina</h3><p>Conteúdo respondido pelo menos uma vez.</p></div>
         </div>
 
         <div className="discipline-progress-list">
@@ -281,12 +246,14 @@ export function Home() {
                   <strong className="discipline-progress-percentage">
                     {discipline.percentage}%
                   </strong>
+                  <small>{discipline.answeredStatements}/{discipline.totalStatements}</small>
                 </div>
               ),
             )
           )}
         </div>
       </section>
+      </div>
     </section>
   );
 }

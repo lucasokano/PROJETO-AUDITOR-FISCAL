@@ -2,8 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
-import { StudyProvider } from "./contexts/StudyContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 import "./index.css";
 
@@ -19,9 +19,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
-      <StudyProvider>
+      <AuthProvider>
         <App />
-      </StudyProvider>
+      </AuthProvider>
     </ThemeProvider>
   </StrictMode>,
 );

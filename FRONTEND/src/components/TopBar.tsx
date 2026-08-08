@@ -1,5 +1,7 @@
-import { Palette } from "lucide-react";
+import { LogOut, Palette } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { accentThemes, useTheme, type AccentTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
 
 interface TopBarProps {
   onMenuToggle: () => void;
@@ -7,6 +9,13 @@ interface TopBarProps {
 
 export function TopBar({ onMenuToggle }: TopBarProps) {
   const { accent, setAccent } = useTheme();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <header className="topbar">
@@ -27,6 +36,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
           ))}
         </select>
       </label>
+      <button type="button" className="topbar-logout" onClick={() => void handleLogout()}><LogOut size={15} /><span>Sair</span></button>
     </header>
   );
 }

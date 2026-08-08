@@ -3,8 +3,7 @@ import {
   Brain,
   ChevronDown,
   ChevronRight,
-  Home,
-  RotateCcw,
+  BarChart3,
   Settings,
 } from "lucide-react";
 
@@ -130,9 +129,9 @@ export function Sidebar({
           }`}
           onClick={() => navigate("/")}
         >
-          <Home size={18} />
+          <BarChart3 size={18} />
 
-          <span>Início</span>
+          <span>Desempenho</span>
         </button>
 
         <button
@@ -140,17 +139,8 @@ export function Sidebar({
           className={`sidebar-home-button ${location.pathname === "/revisao" ? "sidebar-item-active" : ""}`}
           onClick={() => navigate("/revisao")}
         >
-          <RotateCcw size={17} />
-          <span>Revisões</span>
-        </button>
-
-        <button
-          type="button"
-          className={`sidebar-home-button ${location.pathname === "/exercicios" ? "sidebar-item-active" : ""}`}
-          onClick={() => navigate("/exercicios")}
-        >
           <Brain size={17} />
-          <span>Prática livre</span>
+          <span>Revisões</span>
         </button>
 
         <span className="sidebar-section-label sidebar-disciplines-label">Disciplinas</span>
