@@ -2323,6 +2323,16 @@ select option[value=""] { color: #7f8b9b; }
 .performance-dashboard .discipline-progress-row > small { color: var(--color-text-secondary); font-size: 9px; text-align: right; }
 .performance-dashboard .discipline-progress-value { background: var(--color-primary); }
 .performance-dashboard .home-empty-state { padding: 36px 14px; color: var(--color-text-secondary); font-size: 11px; text-align: center; }
+
+.study-refresh-indicator,
+.study-refresh-error { font-size: 10px; color: var(--color-text-secondary); }
+.study-refresh-error { color: var(--color-danger); }
+.study-page-skeleton { display: grid; gap: 12px; width: 100%; }
+.study-page-skeleton span { min-height: 72px; border: 1px solid var(--color-border); border-radius: 8px; background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-elevated) 50%, var(--color-surface) 75%); background-size: 200% 100%; animation: study-skeleton-pulse 1.4s ease-in-out infinite; }
+.study-dashboard-skeleton { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.study-review-skeleton span:first-child { min-height: 54px; }
+.study-review-skeleton span:nth-child(2) { min-height: 260px; }
+@keyframes study-skeleton-pulse { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 .answer-button > span { display: none; }
 @media (max-width: 1150px) {
   .performance-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

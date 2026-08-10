@@ -8,7 +8,10 @@ import {
   type ReactNode,
 } from "react";
 
-import { getStudyStructure } from "../services/studyApi";
+import {
+  getCachedStudyStructure,
+  getStudyStructure,
+} from "../services/studyApi";
 
 import type {
   Discipline,
@@ -19,6 +22,7 @@ import type {
 interface StudyContextValue {
   disciplines: Discipline[];
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
 
   reloadStructure: () => Promise<void>;
@@ -49,20 +53,24 @@ const StudyContext =
 export function StudyProvider({
   children,
 }: StudyProviderProps) {
-  const [disciplines, setDisciplines] = useState<
-    Discipline[]
-  >([]);
+  const [disciplines, setDisciplines] = useState<Discipline[]>(
+    () => getCachedStudyStructure() ?? [],
+  );
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [isLoading, setIsLoading] = useState(
+    () => getCachedStudyStructure() === null,
+  );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [error, setError] = useState<
     string | null
   >(null);
 
   const loadStructure = useCallback(async () => {
+    const hasPreviousData = getCachedStudyStructure() !== null;
     try {
-      setIsLoading(true);
+      setIsLoading(!hasPreviousData);
+      setIsRefreshing(hasPreviousData);
       setError(null);
 
       const structure = await getStudyStructure();
@@ -75,9 +83,9 @@ export function StudyProvider({
           : "Erro ao carregar a estrutura de estudos.";
 
       setError(message);
-      setDisciplines([]);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -89,6 +97,7 @@ export function StudyProvider({
     () => ({
       disciplines,
       isLoading,
+      isRefreshing,
       error,
       reloadStructure: loadStructure,
 
@@ -134,6 +143,7 @@ export function StudyProvider({
       disciplines,
       error,
       isLoading,
+      isRefreshing,
       loadStructure,
     ],
   );

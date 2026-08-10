@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, BookOpenCheck, CalendarClock, Target } from "lucide-react";
 
 import {
+  getCachedDashboard,
   getDashboard,
 } from "../services/studyApi";
 
@@ -21,13 +22,15 @@ export function Home() {
     dashboard,
     setDashboard,
   ] = useState<StudyDashboard | null>(
-    null,
+    () => getCachedDashboard(),
   );
 
   const [
     isLoading,
     setIsLoading,
-  ] = useState(true);
+  ] = useState(() => getCachedDashboard() === null);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -36,8 +39,10 @@ export function Home() {
     let cancelled = false;
 
     async function load() {
+      const hasPreviousData = getCachedDashboard() !== null;
       try {
-        setIsLoading(true);
+        setIsLoading(!hasPreviousData);
+        setIsRefreshing(hasPreviousData);
         setError(null);
 
         const result =
@@ -57,6 +62,7 @@ export function Home() {
       } finally {
         if (!cancelled) {
           setIsLoading(false);
+          setIsRefreshing(false);
         }
       }
     }
@@ -112,15 +118,17 @@ export function Home() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !dashboard) {
     return (
-      <section className="page">
-        <h2>Carregando painel...</h2>
+      <section className="page home-page performance-dashboard" aria-busy="true">
+        <div className="study-page-skeleton study-dashboard-skeleton">
+          <span /><span /><span /><span />
+        </div>
       </section>
     );
   }
 
-  if (error) {
+  if (error && !dashboard) {
     return (
       <section className="page">
         <h2>Erro ao carregar painel</h2>
@@ -149,6 +157,8 @@ export function Home() {
         <span className="home-eyebrow">Painel de estudos</span>
         <h2>Desempenho</h2>
         <p>Acompanhe o conteúdo estudado e a carga de revisões dos próximos dias.</p>
+        {isRefreshing && <span className="study-refresh-indicator" role="status">Atualizando...</span>}
+        {error && <span className="study-refresh-error" role="alert">{error}</span>}
       </header>
 
       <section className="performance-summary-grid">

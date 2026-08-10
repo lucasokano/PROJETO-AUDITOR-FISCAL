@@ -12,6 +12,23 @@ import type {
   RegisterAnswerResponse,
   StudyDashboard,
 } from "../types/study";
+import {
+  invalidateDashboard,
+  invalidateReviews,
+  invalidateStructure,
+  loadDashboardCached,
+  loadReviewsCached,
+  loadStructureCached,
+  peekDashboard,
+  peekReviews,
+  peekStructure,
+  recordStatementAnswer,
+} from "./studyCache";
+
+export { clearStudyCache } from "./studyCache";
+export const getCachedDashboard = peekDashboard;
+export const getCachedStudyStructure = peekStructure;
+export const getCachedDueReviewStatements = peekReviews;
 
 interface DisciplineResponse {
   id: number;
@@ -82,14 +99,14 @@ async function request<T>(
 }
 
 export function getDashboard() {
-  return request<StudyDashboard>(
-    "/study/dashboard",
+  return loadDashboardCached(
+    () => request<StudyDashboard>("/study/dashboard"),
   );
 }
 
 export function getStudyStructure() {
-  return request<Discipline[]>(
-    "/study/structure",
+  return loadStructureCached(
+    () => request<Discipline[]>("/study/structure"),
   );
 }
 
@@ -110,167 +127,200 @@ export function getStatementsBySubtopic(
 export const getSubtopicStatements =
   getStatementsBySubtopic;
 
-export function createStatement(
+export async function createStatement(
   input: CreateStatementInput,
 ) {
-  return request<StatementResponse>(
+  const result = await request<StatementResponse>(
     "/study/statements",
     {
       method: "POST",
       body: JSON.stringify(input),
     },
   );
+  invalidateDashboard();
+  invalidateReviews();
+  return result;
 }
 
-export function createStatementsBulk(
+export async function createStatementsBulk(
   input: CreateStatementsBulkInput,
 ) {
-  return request<StatementResponse[]>(
+  const result = await request<StatementResponse[]>(
     "/study/statements/bulk",
     {
       method: "POST",
       body: JSON.stringify(input),
     },
   );
+  invalidateDashboard();
+  invalidateReviews();
+  return result;
 }
 
-export function updateStatement(
+export async function updateStatement(
   statementId: number,
   input: UpdateStatementInput,
 ) {
-  return request<StatementResponse>(
+  const result = await request<StatementResponse>(
     `/study/statements/${statementId}`,
     {
       method: "PATCH",
       body: JSON.stringify(input),
     },
   );
+  invalidateDashboard();
+  invalidateReviews();
+  return result;
 }
 
-export function deleteStatement(
+export async function deleteStatement(
   statementId: number,
 ) {
-  return request<void>(
+  const result = await request<void>(
     `/study/statements/${statementId}`,
     {
       method: "DELETE",
     },
   );
+  invalidateDashboard();
+  invalidateReviews();
+  return result;
 }
 
-export function createDiscipline(
+export async function createDiscipline(
   input: CreateDisciplineInput,
 ) {
-  return request<DisciplineResponse>(
+  const result = await request<DisciplineResponse>(
     "/study/disciplines",
     {
       method: "POST",
       body: JSON.stringify(input),
     },
   );
+  invalidateStructure();
+  invalidateDashboard();
+  return result;
 }
 
-export function createTopic(
+export async function createTopic(
   input: CreateTopicInput,
 ) {
-  return request<TopicResponse>(
+  const result = await request<TopicResponse>(
     "/study/topics",
     {
       method: "POST",
       body: JSON.stringify(input),
     },
   );
+  invalidateStructure();
+  return result;
 }
 
-export function createSubtopic(
+export async function createSubtopic(
   input: CreateSubtopicInput,
 ) {
-  return request<SubtopicResponse>(
+  const result = await request<SubtopicResponse>(
     "/study/subtopics",
     {
       method: "POST",
       body: JSON.stringify(input),
     },
   );
+  invalidateStructure();
+  return result;
 }
 
-export function updateDiscipline(
+export async function updateDiscipline(
   disciplineId: number,
   name: string,
 ) {
-  return request<DisciplineResponse>(
+  const result = await request<DisciplineResponse>(
     `/study/disciplines/${disciplineId}`,
     {
       method: "PATCH",
       body: JSON.stringify({ name }),
     },
   );
+  invalidateStructure();
+  invalidateDashboard();
+  return result;
 }
 
-export function updateTopic(
+export async function updateTopic(
   topicId: number,
   name: string,
 ) {
-  return request<TopicResponse>(
+  const result = await request<TopicResponse>(
     `/study/topics/${topicId}`,
     {
       method: "PATCH",
       body: JSON.stringify({ name }),
     },
   );
+  invalidateStructure();
+  return result;
 }
 
-export function updateSubtopic(
+export async function updateSubtopic(
   subtopicId: number,
   name: string,
 ) {
-  return request<SubtopicResponse>(
+  const result = await request<SubtopicResponse>(
     `/study/subtopics/${subtopicId}`,
     {
       method: "PATCH",
       body: JSON.stringify({ name }),
     },
   );
+  invalidateStructure();
+  return result;
 }
 
-export function deleteDiscipline(
+export async function deleteDiscipline(
   disciplineId: number,
 ) {
-  return request<void>(
+  const result = await request<void>(
     `/study/disciplines/${disciplineId}`,
     {
       method: "DELETE",
     },
   );
+  invalidateStructure();
+  invalidateDashboard();
+  return result;
 }
 
-export function deleteTopic(
+export async function deleteTopic(
   topicId: number,
 ) {
-  return request<void>(
+  const result = await request<void>(
     `/study/topics/${topicId}`,
     {
       method: "DELETE",
     },
   );
+  invalidateStructure();
+  return result;
 }
 
-export function deleteSubtopic(
+export async function deleteSubtopic(
   subtopicId: number,
 ) {
-  return request<void>(
+  const result = await request<void>(
     `/study/subtopics/${subtopicId}`,
     {
       method: "DELETE",
     },
   );
+  invalidateStructure();
+  return result;
 }
 
-export function registerAnswer(
+export async function registerAnswer(
   statementId: number,
   selectedAnswer: boolean,
 ) {
-  return request<RegisterAnswerResponse>(
+  const result = await request<RegisterAnswerResponse>(
     "/study/answer",
     {
       method: "POST",
@@ -280,6 +330,8 @@ export function registerAnswer(
       }),
     },
   );
+  recordStatementAnswer(statementId);
+  return result;
 }
 
 export function getDisciplineProgress() {
@@ -291,7 +343,8 @@ export function getDisciplineProgress() {
 export function getDueReviewStatements(
   limit = 30,
 ) {
-  return request<PublicStatement[]>(
-    `/study/review?limit=${limit}`,
+  return loadReviewsCached(
+    limit,
+    () => request<PublicStatement[]>(`/study/review?limit=${limit}`),
   );
 }

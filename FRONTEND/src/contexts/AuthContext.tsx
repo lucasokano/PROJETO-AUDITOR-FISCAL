@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { getCurrentUser, loginUser, logoutUser, type AuthUser } from "../services/authApi";
+import { clearStudyCache } from "../services/studyApi";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 interface AuthContextValue {
@@ -21,8 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   const value = useMemo<AuthContextValue>(() => ({
     status, user,
-    login: async (email, password) => { const value = await loginUser(email, password); setUser(value); setStatus("authenticated"); },
-    logout: async () => { try { await logoutUser(); } finally { setUser(null); setStatus("unauthenticated"); } },
+    login: async (email, password) => { clearStudyCache(); const value = await loginUser(email, password); setUser(value); setStatus("authenticated"); },
+    logout: async () => { try { await logoutUser(); } finally { clearStudyCache(); setUser(null); setStatus("unauthenticated"); } },
   }), [status, user]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

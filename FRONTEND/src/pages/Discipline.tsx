@@ -339,15 +339,17 @@ useEffect(() => {
     setAnswerError(null);
   }
 
-  if (isStructureLoading) {
+  if (isStructureLoading && !discipline) {
     return (
-      <section className="page">
-        <h2>Carregando conteúdo...</h2>
+      <section className="page" aria-busy="true">
+        <div className="study-page-skeleton study-review-skeleton">
+          <span /><span /><span />
+        </div>
       </section>
     );
   }
 
-  if (structureError) {
+  if (structureError && (!discipline || !topic)) {
     return (
       <section className="page">
         <h2>Erro ao carregar conteúdo</h2>
@@ -368,6 +370,7 @@ useEffect(() => {
     <div className="discipline-workspace">
 
       <section className="page discipline-page">
+      {structureError && <div className="review-error" role="alert">{structureError}</div>}
       <div className="discipline-heading">
         <span>{discipline.name}</span>
         <span>/</span>

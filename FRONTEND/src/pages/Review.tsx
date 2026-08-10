@@ -6,6 +6,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import {
+  getCachedDueReviewStatements,
   getDueReviewStatements,
   registerAnswer,
 } from "../services/studyApi";
@@ -19,13 +20,17 @@ interface ReviewAnswer {
   isCorrect: boolean;
 }
 
+const REVIEW_LIMIT = 30;
+
 export function Review() {
   const navigate = useNavigate();
 
   const [
     statements,
     setStatements,
-  ] = useState<PublicStatement[]>([]);
+  ] = useState<PublicStatement[]>(
+    () => getCachedDueReviewStatements(REVIEW_LIMIT) ?? [],
+  );
 
   const [
     currentIndex,
@@ -40,7 +45,11 @@ export function Review() {
   const [
     isLoading,
     setIsLoading,
-  ] = useState(true);
+  ] = useState(
+    () => getCachedDueReviewStatements(REVIEW_LIMIT) === null,
+  );
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [
     isAnswering,
@@ -54,12 +63,14 @@ export function Review() {
     let cancelled = false;
 
     async function loadReviews() {
+      const hasPreviousData = getCachedDueReviewStatements(REVIEW_LIMIT) !== null;
       try {
-        setIsLoading(true);
+        setIsLoading(!hasPreviousData);
+        setIsRefreshing(hasPreviousData);
         setError(null);
 
         const result =
-          await getDueReviewStatements(30);
+          await getDueReviewStatements(REVIEW_LIMIT);
 
         if (!cancelled) {
           setStatements(result);
@@ -75,6 +86,7 @@ export function Review() {
       } finally {
         if (!cancelled) {
           setIsLoading(false);
+          setIsRefreshing(false);
         }
       }
     }
@@ -154,10 +166,12 @@ export function Review() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && statements.length === 0) {
     return (
-      <section className="page">
-        <h2>Carregando revisões...</h2>
+      <section className="page review-page" aria-busy="true">
+        <div className="study-page-skeleton study-review-skeleton">
+          <span /><span /><span />
+        </div>
       </section>
     );
   }
@@ -285,6 +299,7 @@ export function Review() {
         >
           Sair
         </button>
+        {isRefreshing && <span className="study-refresh-indicator" role="status">Atualizando...</span>}
       </header>
 
       <div className="review-progress-track">

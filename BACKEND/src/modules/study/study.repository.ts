@@ -639,7 +639,7 @@ export function findDisciplineProgress() {
         AS "totalStatements",
       COUNT(
         DISTINCT CASE
-          WHEN aa.id IS NOT NULL
+          WHEN sp.id IS NOT NULL
           THEN s.id
         END
       )::int AS "answeredStatements"
@@ -651,8 +651,8 @@ export function findDisciplineProgress() {
     LEFT JOIN statements s
       ON s.subtopic_id = st.id
       AND s.is_active = true
-    LEFT JOIN answer_attempts aa
-      ON aa.statement_id = s.id
+    LEFT JOIN statement_progress sp
+      ON sp.statement_id = s.id
     GROUP BY
       d.id,
       d.name,

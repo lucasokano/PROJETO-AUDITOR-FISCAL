@@ -32,6 +32,7 @@ export function Sidebar({
   const {
     disciplines,
     isLoading,
+    isRefreshing,
     error,
     reloadStructure,
   } = useStudy();
@@ -151,6 +152,10 @@ export function Sidebar({
           </div>
         )}
 
+        {isRefreshing && (
+          <div className="sidebar-status" role="status">Atualizando disciplinas...</div>
+        )}
+
         {error && (
           <div className="sidebar-error">
             <span>{error}</span>
@@ -167,7 +172,6 @@ export function Sidebar({
         )}
 
         {!isLoading &&
-          !error &&
           disciplines.map((discipline) => {
             const isExpanded =
               openDisciplines.has(
