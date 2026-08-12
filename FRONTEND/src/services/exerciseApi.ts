@@ -5,10 +5,12 @@ import type {
   PresentedExercise,
   SubmittedAnswer,
 } from "../types/exercise";
+import { createKeyedCache } from "./questionCache";
 
 const API_URL =
   import.meta.env.VITE_API_URL ??
   "http://localhost:3001/api";
+const exerciseGroupCache = createKeyedCache<ExerciseGroup[]>();
 
 async function request<T>(
   path: string,
@@ -34,10 +36,10 @@ async function request<T>(
 }
 
 export function getExerciseGroups(subtopicId: number) {
-  return request<ExerciseGroup[]>(
-    `/exercises/groups?subtopicId=${subtopicId}`,
-  );
+  return exerciseGroupCache.load(subtopicId, () => request<ExerciseGroup[]>(`/exercises/groups?subtopicId=${subtopicId}`));
 }
+
+export function getCachedExerciseGroups(subtopicId: number) { return exerciseGroupCache.peek(subtopicId); }
 
 export function getNextExercise(
   subtopicId: number,

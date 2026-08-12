@@ -1,6 +1,8 @@
 import type { Exam, ExamBoard, ExamQuestion, ExamQuestionInput, StudyExamQuestion, StudyExamQuestionResult } from "../types/examQuestion";
+import { createKeyedCache } from "./questionCache";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
+const studyQuestionCache = createKeyedCache<StudyExamQuestion[]>();
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}/exam-questions${path}`, {
     ...options,
@@ -21,7 +23,15 @@ export const getExams = () => request<Exam[]>("/exams");
 export const createExam = (input: { boardId: number; name: string; year: number | null }) => request<Exam>("/exams", { method: "POST", body: JSON.stringify(input) });
 export const deleteExam = (id: number) => request<void>(`/exams/${id}`, { method: "DELETE" });
 export const getExamQuestions = () => request<ExamQuestion[]>("/questions");
-export const createExamQuestion = (input: ExamQuestionInput) => request<ExamQuestion>("/questions", { method: "POST", body: JSON.stringify(input) });
-export const deleteExamQuestion = (id: number) => request<void>(`/questions/${id}`, { method: "DELETE" });
-export const getStudyExamQuestions = (subtopicId: number) => request<StudyExamQuestion[]>(`/study?subtopicId=${subtopicId}`);
+export const createExamQuestion = async (input: ExamQuestionInput) => {
+  const created = await request<ExamQuestion>("/questions", { method: "POST", body: JSON.stringify(input) });
+  studyQuestionCache.invalidate(input.subtopicId);
+  return created;
+};
+export const deleteExamQuestion = async (id: number) => {
+  await request<void>(`/questions/${id}`, { method: "DELETE" });
+  studyQuestionCache.invalidate();
+};
+export const getCachedStudyExamQuestions = (subtopicId: number) => studyQuestionCache.peek(subtopicId);
+export const getStudyExamQuestions = (subtopicId: number) => studyQuestionCache.load(subtopicId, () => request<StudyExamQuestion[]>(`/study?subtopicId=${subtopicId}`));
 export const answerStudyExamQuestion = (questionId: number, selectedOptionId: number) => request<StudyExamQuestionResult>(`/study/${questionId}/answer`, { method: "POST", body: JSON.stringify({ selectedOptionId }) });

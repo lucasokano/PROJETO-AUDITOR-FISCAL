@@ -12,18 +12,22 @@ import {
   ListChecks,
 } from "lucide-react";
 
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 import { StatementCard } from "../components/StatementCard";
 import { EmbeddedExerciseSession } from "../components/exercises/EmbeddedExerciseSession";
 import { RealMultipleChoiceSession, type RealQuestionProgress } from "../components/exercises/RealMultipleChoiceSession";
+import { AuthoredUngradedSession } from "../components/exercises/AuthoredUngradedSession";
 import { useStudy } from "../contexts/StudyContext";
-import { getExerciseGroups } from "../services/exerciseApi";
+import { getCachedExerciseGroups, getExerciseGroups } from "../services/exerciseApi";
+import { getStudyConceptQuestions, getStudyClozeQuestions } from "../services/authoredQuestionApi";
+import { getStudyExamQuestions } from "../services/examQuestionApi";
 import {
   getSubtopicStatements,
   registerAnswer,
 } from "../services/studyApi";
 import type { PublicStatement } from "../types/study";
+import type { AuthoredQuestionKind } from "../types/authoredQuestion";
 import {
   ExerciseType,
   type ClassifyBatchResult,
@@ -44,6 +48,10 @@ interface AnswerResult {
 }
 
 export function Discipline() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedExerciseMode = searchParams.get("exercise") ?? "true-false";
+  const requestedStructuredType = searchParams.get("type");
+  const requestedStructuredGroupId = Number(searchParams.get("groupId"));
   const {
     disciplineId,
     topicId,
@@ -104,6 +112,8 @@ export function Discipline() {
 
   const [isRealMultipleChoiceActive, setIsRealMultipleChoiceActive] =
     useState(false);
+  const [activeAuthoredType, setActiveAuthoredType] =
+    useState<AuthoredQuestionKind | null>(null);
 
   const [batchResult, setBatchResult] =
     useState<ClassifyBatchResult | null>(null);
@@ -111,6 +121,10 @@ export function Discipline() {
     useState<RealQuestionProgress>({ total: 0, answered: 0, correct: 0 });
   const handleRealQuestionProgress = useCallback((progress: RealQuestionProgress) => {
     setRealQuestionProgress(progress);
+  }, []);
+  const [authoredProgress, setAuthoredProgress] = useState({ total: 0, answered: 0 });
+  const handleAuthoredProgress = useCallback((progress: { total: number; answered: number }) => {
+    setAuthoredProgress(progress);
   }, []);
 
   const answerInFlightRef = useRef(false);
@@ -128,8 +142,10 @@ useEffect(() => {
   setAnswerError(null);
   setActiveExercise(null);
   setIsRealMultipleChoiceActive(false);
+  setActiveAuthoredType(null);
   setBatchResult(null);
   setRealQuestionProgress({ total: 0, answered: 0, correct: 0 });
+  setAuthoredProgress({ total: 0, answered: 0 });
 
   if (!subtopic) {
     setIsLoading(false);
@@ -175,19 +191,41 @@ useEffect(() => {
 }, [subtopic]);
 
   useEffect(() => {
-    setExerciseGroups([]);
+    if (!subtopic) return;
+    if (requestedExerciseMode === "structured") {
+      const type = Object.values(ExerciseType).find((value) => value === requestedStructuredType);
+      const group = exerciseGroups.find((item) => item.id === requestedStructuredGroupId);
+      setIsRealMultipleChoiceActive(false);
+      setActiveAuthoredType(null);
+      setActiveExercise(type && group?.eligibleTypes.includes(type) ? { type, groupId: group.id } : null);
+      return;
+    }
+    setActiveExercise(null);
+    setBatchResult(null);
+    setActiveAuthoredType(
+      requestedExerciseMode === "conceptual" || requestedExerciseMode === "cloze"
+        ? requestedExerciseMode
+        : null,
+    );
+    setIsRealMultipleChoiceActive(requestedExerciseMode === "exam");
+    setAuthoredProgress({ total: 0, answered: 0 });
+  }, [exerciseGroups, requestedExerciseMode, requestedStructuredGroupId, requestedStructuredType, subtopic]);
 
+  useEffect(() => {
     if (!subtopic) {
+      setExerciseGroups([]);
       setAreExerciseGroupsLoading(false);
       return;
     }
 
     const currentSubtopicId = subtopic.id;
+    const cachedGroups = getCachedExerciseGroups(currentSubtopicId);
+    setExerciseGroups(cachedGroups ?? []);
     let cancelled = false;
 
     async function loadExerciseGroups() {
       try {
-        setAreExerciseGroupsLoading(true);
+        setAreExerciseGroupsLoading(!cachedGroups);
         const result = await getExerciseGroups(currentSubtopicId);
 
         if (!cancelled) {
@@ -205,6 +243,11 @@ useEffect(() => {
     }
 
     void loadExerciseGroups();
+    void Promise.allSettled([
+      getStudyExamQuestions(currentSubtopicId),
+      getStudyConceptQuestions(currentSubtopicId),
+      getStudyClozeQuestions(currentSubtopicId),
+    ]);
 
     return () => {
       cancelled = true;
@@ -246,19 +289,30 @@ useEffect(() => {
 
   const isBatchExerciseActive =
     activeExercise?.type === ExerciseType.CLASSIFY_BATCH;
-  const performanceTotal = isBatchExerciseActive
+  const isAuthoredUngradedActive = activeAuthoredType !== null;
+  const performanceTotal = isAuthoredUngradedActive
+    ? authoredProgress.total
+    : isBatchExerciseActive
     ? batchResult?.totalCount ?? 0
     : isRealMultipleChoiceActive ? realQuestionProgress.total : total;
-  const performanceCorrect = isBatchExerciseActive
+  const performanceCorrect = isAuthoredUngradedActive
+    ? 0
+    : isBatchExerciseActive
     ? batchResult?.correctCount ?? 0
     : isRealMultipleChoiceActive ? realQuestionProgress.correct : correct;
-  const performanceIncorrect = isBatchExerciseActive
+  const performanceIncorrect = isAuthoredUngradedActive
+    ? 0
+    : isBatchExerciseActive
     ? performanceTotal - performanceCorrect
     : isRealMultipleChoiceActive ? realQuestionProgress.answered - realQuestionProgress.correct : incorrect;
-  const performanceAnswered = isBatchExerciseActive
+  const performanceAnswered = isAuthoredUngradedActive
+    ? authoredProgress.answered
+    : isBatchExerciseActive
     ? batchResult?.totalCount ?? 0
     : isRealMultipleChoiceActive ? realQuestionProgress.answered : answered;
-  const performancePercentage = isBatchExerciseActive
+  const performancePercentage = isAuthoredUngradedActive
+    ? (authoredProgress.total > 0 ? Math.round((authoredProgress.answered / authoredProgress.total) * 100) : 0)
+    : isBatchExerciseActive
     ? Math.round((batchResult?.score ?? 0) * 100)
     : isRealMultipleChoiceActive
       ? realQuestionProgress.answered > 0 ? Math.round((realQuestionProgress.correct / realQuestionProgress.answered) * 100) : 0
@@ -390,10 +444,12 @@ useEffect(() => {
         <nav className="discipline-exercise-tabs" aria-label="Tipos de exercício do subtópico">
           <button
             type="button"
-            className={`discipline-exercise-tab ${activeExercise === null && !isRealMultipleChoiceActive ? "discipline-exercise-tab-active" : ""}`}
+            className={`discipline-exercise-tab ${activeExercise === null && !isRealMultipleChoiceActive && !activeAuthoredType ? "discipline-exercise-tab-active" : ""}`}
             onClick={() => {
               setActiveExercise(null);
               setIsRealMultipleChoiceActive(false);
+              setActiveAuthoredType(null);
+              setSearchParams({}, { replace: true });
             }}
           >
             Afirmações V/F
@@ -404,10 +460,20 @@ useEffect(() => {
             className={`discipline-exercise-tab ${isRealMultipleChoiceActive ? "discipline-exercise-tab-active" : ""}`}
             onClick={() => {
               setActiveExercise(null);
+              setActiveAuthoredType(null);
               setIsRealMultipleChoiceActive(true);
+              setSearchParams({ exercise: "exam" }, { replace: true });
             }}
           >
             Questões de prova
+          </button>
+
+          <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "conceptual" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("conceptual"); setSearchParams({ exercise: "conceptual" }, { replace: true }); }}>
+            Conceitual
+          </button>
+
+          <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "cloze" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("cloze"); setSearchParams({ exercise: "cloze" }, { replace: true }); }}>
+            Lacunas
           </button>
 
           {structuredExerciseTabs.map(({ type, groupId }) => (
@@ -417,8 +483,10 @@ useEffect(() => {
               key={type}
               onClick={() => {
                 setIsRealMultipleChoiceActive(false);
+                setActiveAuthoredType(null);
                 setBatchResult(null);
                 setActiveExercise({ type, groupId });
+                setSearchParams({ exercise: "structured", type, groupId: String(groupId) }, { replace: true });
               }}
             >
               {exerciseTypeLabels[type]}
@@ -429,7 +497,9 @@ useEffect(() => {
         </nav>
       )}
 
-      {activeExercise && subtopic ? (
+      {activeAuthoredType && subtopic ? (
+        <AuthoredUngradedSession kind={activeAuthoredType} subtopicId={subtopic.id} onProgressChange={handleAuthoredProgress} />
+      ) : activeExercise && subtopic ? (
         <EmbeddedExerciseSession
           subtopicId={subtopic.id}
           groupId={activeExercise.groupId}
@@ -565,7 +635,7 @@ useEffect(() => {
         <div
           className="performance-ring"
           role="progressbar"
-          aria-label="Percentual de acertos"
+          aria-label={isAuthoredUngradedActive ? "Percentual respondido" : "Percentual de acertos"}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={performancePercentage}
@@ -575,13 +645,13 @@ useEffect(() => {
         >
           <div className="performance-ring-center">
             <strong>{performancePercentage}%</strong>
-            <span>de acertos</span>
+            <span>{isAuthoredUngradedActive ? "respondidas" : "de acertos"}</span>
           </div>
         </div>
 
         <div className="performance-metrics">
           <div className="performance-item">
-            <span><FileText size={15} /> {isBatchExerciseActive ? "Total de itens" : isRealMultipleChoiceActive ? "Total de questões" : "Total de afirmações"}</span>
+            <span><FileText size={15} /> {isBatchExerciseActive ? "Total de itens" : isRealMultipleChoiceActive || isAuthoredUngradedActive ? "Total de questões" : "Total de afirmações"}</span>
             <strong>{performanceTotal}</strong>
           </div>
 
@@ -590,18 +660,18 @@ useEffect(() => {
             <strong>{performanceAnswered}</strong>
           </div>
 
-          <div className="performance-item performance-correct">
+          {!isAuthoredUngradedActive && <div className="performance-item performance-correct">
             <span><CircleCheck size={15} /> Certas</span>
             <strong>{performanceCorrect}</strong>
-          </div>
+          </div>}
 
-          <div className="performance-item performance-incorrect">
+          {!isAuthoredUngradedActive && <div className="performance-item performance-incorrect">
             <span><CircleX size={15} /> Erradas</span>
             <strong>{performanceIncorrect}</strong>
-          </div>
+          </div>}
         </div>
 
-        {!isBatchExerciseActive && !isRealMultipleChoiceActive && answered > 0 && (
+        {!isBatchExerciseActive && !isRealMultipleChoiceActive && !isAuthoredUngradedActive && answered > 0 && (
           <button type="button" className="restart-button" onClick={restartSubtopic}>
             Reiniciar subtópico
           </button>

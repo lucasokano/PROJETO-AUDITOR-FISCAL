@@ -16,6 +16,22 @@ interface EmbeddedExerciseSessionProps {
   onResultChange?: (result: ExerciseResult | null) => void;
 }
 
+interface PreservedExerciseSession {
+  exercise: PresentedExercise;
+  result: ExerciseResult | null;
+  cachedAt: number;
+}
+
+const preservedSessions = new Map<string, PreservedExerciseSession>();
+const PRESERVED_SESSION_TIME = 5 * 60_000;
+
+function getPreservedSession(key: string) {
+  const session = preservedSessions.get(key);
+  if (session && Date.now() - session.cachedAt < PRESERVED_SESSION_TIME) return session;
+  preservedSessions.delete(key);
+  return undefined;
+}
+
 export function EmbeddedExerciseSession({
   subtopicId,
   groupId,
@@ -23,8 +39,10 @@ export function EmbeddedExerciseSession({
   type,
   onResultChange,
 }: EmbeddedExerciseSessionProps) {
-  const [exercise, setExercise] = useState<PresentedExercise | null>(null);
-  const [result, setResult] = useState<ExerciseResult | null>(null);
+  const sessionKey = `${subtopicId}:${groupId}:${type}`;
+  const preserved = getPreservedSession(sessionKey);
+  const [exercise, setExercise] = useState<PresentedExercise | null>(preserved?.exercise ?? null);
+  const [result, setResult] = useState<ExerciseResult | null>(preserved?.result ?? null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,14 +53,23 @@ export function EmbeddedExerciseSession({
     onResultChangeRef.current = onResultChange;
   }, [onResultChange]);
 
-  const loadNextExercise = useCallback(async () => {
+  const loadNextExercise = useCallback(async (force = false) => {
+    const cached = getPreservedSession(sessionKey);
+    if (!force && cached) {
+      setExercise(cached.exercise);
+      setResult(cached.result);
+      onResultChangeRef.current?.(cached.result);
+      return;
+    }
     try {
       setIsLoading(true);
       setError(null);
       setExercise(null);
       setResult(null);
       onResultChangeRef.current?.(null);
-      setExercise(await getNextExercise(subtopicId, groupId, type));
+      const nextExercise = await getNextExercise(subtopicId, groupId, type);
+      preservedSessions.set(sessionKey, { exercise: nextExercise, result: null, cachedAt: Date.now() });
+      setExercise(nextExercise);
     } catch (requestError) {
       setError(requestError instanceof Error
         ? requestError.message
@@ -50,7 +77,7 @@ export function EmbeddedExerciseSession({
     } finally {
       setIsLoading(false);
     }
-  }, [groupId, subtopicId, type]);
+  }, [groupId, sessionKey, subtopicId, type]);
 
   useEffect(() => {
     void loadNextExercise();
@@ -69,6 +96,7 @@ export function EmbeddedExerciseSession({
         answer,
       } as Parameters<typeof submitExerciseAnswer>[0]);
       setResult(nextResult);
+      preservedSessions.set(sessionKey, { exercise, result: nextResult, cachedAt: Date.now() });
       onResultChangeRef.current?.(nextResult);
     } catch (requestError) {
       setError(requestError instanceof Error
@@ -87,7 +115,7 @@ export function EmbeddedExerciseSession({
           <span>Grupo</span>
           <strong>{groupName}</strong>
         </div>
-        <button type="button" className="secondary-button" disabled={isLoading} onClick={() => void loadNextExercise()}>
+        <button type="button" className="secondary-button" disabled={isLoading} onClick={() => void loadNextExercise(true)}>
           {isLoading ? "Gerando..." : "Gerar outro"}
         </button>
       </header>
@@ -100,7 +128,7 @@ export function EmbeddedExerciseSession({
           result={result}
           isSubmitting={isSubmitting}
           onSubmit={(answer) => void submitAnswer(answer)}
-          onNext={() => void loadNextExercise()}
+          onNext={() => void loadNextExercise(true)}
         />
       )}
     </section>

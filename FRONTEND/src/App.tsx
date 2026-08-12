@@ -16,6 +16,7 @@ import { Home } from "./pages/Home";
 import { ExerciseSession } from "./pages/ExerciseSession";
 import { Review } from "./pages/Review";
 import { Login } from "./pages/Login";
+import { AdminAuthoredQuestion } from "./pages/AdminAuthoredQuestion";
 
 function App() {
   return (
@@ -56,6 +57,16 @@ function App() {
           <Route
             path="/admin/questions/multiple-choice"
             element={<AdminExamTool mode="questions" title="Adicionar múltipla escolha" description="Cadastre questões avulsas com até cinco alternativas." />}
+          />
+
+          <Route
+            path="/admin/questions/conceptual"
+            element={<AdminAuthoredQuestion kind="conceptual" />}
+          />
+
+          <Route
+            path="/admin/questions/cloze"
+            element={<AdminAuthoredQuestion kind="cloze" />}
           />
 
           <Route

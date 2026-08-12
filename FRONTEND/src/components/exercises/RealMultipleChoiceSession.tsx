@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { answerStudyExamQuestion, getStudyExamQuestions } from "../../services/examQuestionApi";
+import { answerStudyExamQuestion, getCachedStudyExamQuestions, getStudyExamQuestions } from "../../services/examQuestionApi";
 import type { StudyExamQuestion, StudyExamQuestionResult } from "../../types/examQuestion";
 
 export interface RealQuestionProgress { total: number; answered: number; correct: number; }
@@ -10,18 +10,20 @@ interface Props {
 }
 
 export function RealMultipleChoiceSession({ subtopicId, onProgressChange }: Props) {
-  const [questions, setQuestions] = useState<StudyExamQuestion[]>([]);
+  const cachedQuestions = getCachedStudyExamQuestions(subtopicId);
+  const [questions, setQuestions] = useState<StudyExamQuestion[]>(cachedQuestions ?? []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
   const [results, setResults] = useState<StudyExamQuestionResult[]>([]);
   const [result, setResult] = useState<StudyExamQuestionResult | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!cachedQuestions);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true); setError(""); setQuestions([]); setResults([]); setCurrentIndex(0); setResult(null);
+    const cached = getCachedStudyExamQuestions(subtopicId);
+    setIsLoading(!cached); setError(""); setQuestions(cached ?? []); setResults([]); setCurrentIndex(0); setResult(null);
     void getStudyExamQuestions(subtopicId).then((items) => {
       if (!cancelled) { setQuestions(items); onProgressChange({ total: items.length, answered: 0, correct: 0 }); }
     }).catch((requestError: Error) => { if (!cancelled) setError(requestError.message); })

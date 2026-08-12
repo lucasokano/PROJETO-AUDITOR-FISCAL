@@ -8,6 +8,8 @@ import {
   Network,
   Search,
   Settings,
+  MessageSquareText,
+  TextCursorInput,
 } from "lucide-react";
 
 import {
@@ -42,6 +44,16 @@ export function SubtopicMenu() {
       label: "Adicionar múltipla escolha",
       path: "/admin/questions/multiple-choice",
       icon: CirclePlus,
+    },
+    {
+      label: "Adicionar conceitual",
+      path: "/admin/questions/conceptual",
+      icon: MessageSquareText,
+    },
+    {
+      label: "Adicionar lacuna",
+      path: "/admin/questions/cloze",
+      icon: TextCursorInput,
     },
     {
       label: "Adicionar Prova",

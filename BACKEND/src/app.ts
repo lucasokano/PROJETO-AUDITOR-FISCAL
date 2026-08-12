@@ -8,6 +8,7 @@ import { exerciseRoutes } from "./modules/exercises/exercise.routes.js";
 import { knowledgeRoutes } from "./modules/knowledge/knowledge.routes.js";
 import { studyRoutes } from "./modules/study/study.routes.js";
 import { examQuestionRoutes } from "./modules/examQuestions/exam-question.routes.js";
+import { authoredQuestionRoutes } from "./modules/authoredQuestions/authored-question.routes.js";
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,7 @@ export function createApp() {
   app.use("/api/knowledge", requireAuth, knowledgeRoutes);
   app.use("/api/exercises", requireAuth, exerciseRoutes);
   app.use("/api/exam-questions", requireAuth, examQuestionRoutes);
+  app.use("/api/authored-questions", requireAuth, authoredQuestionRoutes);
   app.use((_request, response) => { response.status(404).json({ message: "Rota não encontrada." }); });
   app.use(errorHandler);
   return app;

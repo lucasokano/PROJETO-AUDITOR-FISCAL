@@ -62,10 +62,43 @@ model Subtopic {
   knowledgeItems       KnowledgeItem[]
   classificationGroups ClassificationGroup[]
   examQuestions        ExamQuestion[]
+  conceptQuestions     ConceptQuestion[]
+  clozeQuestions       ClozeQuestion[]
 
   @@unique([topicId, slug])
   @@index([topicId])
   @@map("subtopics")
+}
+
+model ConceptQuestion {
+  id         Int      @id @default(autoincrement())
+  subtopicId Int      @map("subtopic_id")
+  question   String
+  answer     String
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@index([subtopicId])
+  @@index([subtopicId, isActive])
+  @@map("concept_questions")
+}
+
+model ClozeQuestion {
+  id              Int      @id @default(autoincrement())
+  subtopicId      Int      @map("subtopic_id")
+  textWithAnswers String   @map("text_with_answers")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@index([subtopicId])
+  @@index([subtopicId, isActive])
+  @@map("cloze_questions")
 }
 
 model ExamBoard {
