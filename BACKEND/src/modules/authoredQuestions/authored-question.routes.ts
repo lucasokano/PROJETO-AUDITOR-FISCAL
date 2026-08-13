@@ -3,6 +3,7 @@ import {
   getClozeQuestions, getConceptQuestions, getStudyClozeQuestions, getStudyConceptQuestions,
   postClozeQuestion, postConceptQuestion, putClozeQuestion, putConceptQuestion,
   removeClozeQuestion, removeConceptQuestion, revealStudyClozeQuestion, revealStudyConceptQuestion,
+  previewClozeQuestionsImport, postClozeQuestionsImport,
 } from "./authored-question.controller.js";
 
 export const authoredQuestionRoutes = Router();
@@ -16,6 +17,8 @@ authoredQuestionRoutes.post("/study/conceptual/:questionId/reveal", revealStudyC
 
 authoredQuestionRoutes.get("/cloze", getClozeQuestions);
 authoredQuestionRoutes.post("/cloze", postClozeQuestion);
+authoredQuestionRoutes.post("/cloze/import/preview", previewClozeQuestionsImport);
+authoredQuestionRoutes.post("/cloze/import", postClozeQuestionsImport);
 authoredQuestionRoutes.put("/cloze/:questionId", putClozeQuestion);
 authoredQuestionRoutes.delete("/cloze/:questionId", removeClozeQuestion);
 authoredQuestionRoutes.get("/study/cloze", getStudyClozeQuestions);

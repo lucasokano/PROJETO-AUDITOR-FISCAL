@@ -1,6 +1,6 @@
 import type {
   ClozeAnswerResult, ClozeQuestionInput, ConceptAnswerResult, ConceptQuestionInput,
-  StudyClozeQuestion, StudyConceptQuestion, ConceptQuestion, ClozeQuestion,
+  StudyClozeQuestion, StudyConceptQuestion, ConceptQuestion, ClozeQuestion, ClozeImportInput, ClozeImportPreviewItem, ClozeImportResult,
 } from "../types/authoredQuestion";
 import { createKeyedCache } from "./questionCache";
 
@@ -53,4 +53,9 @@ export const updateClozeQuestion = async (id: number, input: ClozeQuestionInput 
 };
 export const deleteClozeQuestion = async (id: number, subtopicId: number) => {
   await request<void>(`/cloze/${id}`, { method: "DELETE" }); clozeStudyCache.invalidate(subtopicId);
+};
+export const previewClozeImport = (input: ClozeImportInput) => request<{ items: ClozeImportPreviewItem[] }>("/cloze/import/preview", { method: "POST", body: JSON.stringify(input) });
+export const importClozeQuestions = async (input: ClozeImportInput) => {
+  const result = await request<ClozeImportResult>("/cloze/import", { method: "POST", body: JSON.stringify(input) });
+  clozeStudyCache.invalidate(); return result;
 };

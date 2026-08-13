@@ -3,11 +3,32 @@ import {
   createClozeQuestion, createConceptQuestion, deleteClozeQuestion, deleteConceptQuestion,
   listClozeQuestions, listConceptQuestions, listStudyClozeQuestions, listStudyConceptQuestions,
   revealClozeAnswer, revealConceptAnswer, updateClozeQuestion, updateConceptQuestion,
+  previewClozeImport, importClozeQuestions,
 } from "./authored-question.service.js";
 
 function positiveInteger(value: unknown) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseImportBody(body: unknown) {
+  if (!body || typeof body !== "object") return null;
+  const value = body as { disciplineId?: unknown; text?: unknown; createMissing?: unknown };
+  const disciplineId = positiveInteger(value.disciplineId);
+  if (!disciplineId || typeof value.text !== "string" || !value.text.trim() || typeof value.createMissing !== "boolean") return null;
+  return { disciplineId, text: value.text, createMissing: value.createMissing };
+}
+
+export async function previewClozeQuestionsImport(request: Request, response: Response) {
+  const input = parseImportBody(request.body);
+  if (!input) return sendInvalid(response);
+  response.json({ items: await previewClozeImport(input) });
+}
+
+export async function postClozeQuestionsImport(request: Request, response: Response) {
+  const input = parseImportBody(request.body);
+  if (!input) return sendInvalid(response);
+  response.status(201).json(await importClozeQuestions(input));
 }
 
 function requiredString(value: unknown) {

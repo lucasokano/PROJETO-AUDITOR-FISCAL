@@ -17,3 +17,10 @@ interface AuthoredQuestionContext {
 
 export interface ConceptQuestion extends AuthoredQuestionContext { question: string; answer: string; }
 export interface ClozeQuestion extends AuthoredQuestionContext { textWithAnswers: string; }
+
+export interface ClozeImportPreviewItem {
+  line: number; topic: string; subtopic: string; text: string; answers: string[];
+  valid: boolean; message: string | null; willCreateTopic: boolean; willCreateSubtopic: boolean;
+}
+export interface ClozeImportInput { disciplineId: number; text: string; createMissing: boolean; }
+export interface ClozeImportResult { created: number; failed: number; items: Array<ClozeImportPreviewItem & { imported: boolean }>; }
