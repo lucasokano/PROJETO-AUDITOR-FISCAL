@@ -8,6 +8,8 @@ import {
   Save,
   Trash2,
   X,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 import {
@@ -24,6 +26,8 @@ import {
   updateDiscipline,
   updateSubtopic,
   updateTopic,
+  reorderTopics,
+  reorderSubtopics,
 } from "../../services/studyApi";
 
 type ItemType =
@@ -202,6 +206,28 @@ export function StudyStructureManager({
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function moveItem(
+    kind: "topic" | "subtopic",
+    parentId: number,
+    ids: number[],
+    index: number,
+    direction: -1 | 1,
+  ) {
+    const target = index + direction;
+    if (target < 0 || target >= ids.length) return;
+    const ordered = [...ids];
+    [ordered[index], ordered[target]] = [ordered[target]!, ordered[index]!];
+    try {
+      setIsSaving(true);
+      if (kind === "topic") await reorderTopics(parentId, ordered);
+      else await reorderSubtopics(parentId, ordered);
+      await reloadStructure();
+      onMessage("success", "Sequência atualizada.");
+    } catch (error) {
+      onMessage("error", error instanceof Error ? error.message : "Não foi possível alterar a sequência.");
+    } finally { setIsSaving(false); }
   }
 
   function renderEditingRow(
@@ -386,7 +412,7 @@ export function StudyStructureManager({
                 {disciplineOpen && (
                   <div className="structure-children">
                     {discipline.topics.map(
-                      (topic) => {
+                      (topic, topicIndex) => {
                         const topicOpen =
                           openTopics.has(
                             topic.id,
@@ -450,6 +476,8 @@ export function StudyStructureManager({
                                 </div>
 
                                 <div className="structure-tree-actions">
+                                  <button type="button" className="structure-icon-button" title="Mover tópico para cima" disabled={topicIndex === 0 || isSaving} onClick={() => void moveItem("topic", discipline.id, discipline.topics.map((item) => item.id), topicIndex, -1)}><ArrowUp size={15} /></button>
+                                  <button type="button" className="structure-icon-button" title="Mover tópico para baixo" disabled={topicIndex === discipline.topics.length - 1 || isSaving} onClick={() => void moveItem("topic", discipline.id, discipline.topics.map((item) => item.id), topicIndex, 1)}><ArrowDown size={15} /></button>
                                   <button
                                     type="button"
                                     className="structure-icon-button"
@@ -499,6 +527,7 @@ export function StudyStructureManager({
                                 {topic.subtopics.map(
                                   (
                                     subtopic,
+                                    subtopicIndex,
                                   ) => {
                                     const editingSubtopic =
                                       editing?.type ===
@@ -547,6 +576,8 @@ export function StudyStructureManager({
                                         </div>
 
                                         <div className="structure-tree-actions">
+                                          <button type="button" className="structure-icon-button" title="Mover subtópico para cima" disabled={subtopicIndex === 0 || isSaving} onClick={() => void moveItem("subtopic", topic.id, topic.subtopics.map((item) => item.id), subtopicIndex, -1)}><ArrowUp size={15} /></button>
+                                          <button type="button" className="structure-icon-button" title="Mover subtópico para baixo" disabled={subtopicIndex === topic.subtopics.length - 1 || isSaving} onClick={() => void moveItem("subtopic", topic.id, topic.subtopics.map((item) => item.id), subtopicIndex, 1)}><ArrowDown size={15} /></button>
                                           <button
                                             type="button"
                                             className="structure-icon-button"

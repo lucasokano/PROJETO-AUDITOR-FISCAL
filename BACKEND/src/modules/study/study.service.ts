@@ -27,6 +27,8 @@ import {
   updateStatement,
   updateSubtopic,
   updateTopic,
+  reorderTopics,
+  reorderSubtopics,
   createAnswerAttempt,
   findDueReviewStatements,
   findDisciplineProgress,
@@ -89,6 +91,34 @@ interface UpdateTopicInput {
 interface UpdateSubtopicInput {
   subtopicId: number;
   name: string;
+}
+
+function validateOrderIds(ids: number[], expectedIds: number[]) {
+  if (ids.length !== expectedIds.length || new Set(ids).size !== ids.length) {
+    throw new AppError("A sequência informada é inválida.", 400);
+  }
+  const expected = new Set(expectedIds);
+  if (ids.some((id) => !Number.isInteger(id) || id <= 0 || !expected.has(id))) {
+    throw new AppError("A sequência deve conter todos os itens do grupo uma única vez.", 400);
+  }
+}
+
+export async function reorderDisciplineTopics(disciplineId: number, topicIds: number[]) {
+  const discipline = await findDisciplineDetailsById(disciplineId);
+  if (!discipline) throw new AppError("Disciplina não encontrada.", 404);
+  const current = await findStudyStructure();
+  const expectedIds = current.find((item) => item.id === disciplineId)?.topics.map((topic) => topic.id) ?? [];
+  validateOrderIds(topicIds, expectedIds);
+  await reorderTopics(disciplineId, topicIds);
+}
+
+export async function reorderTopicSubtopics(topicId: number, subtopicIds: number[]) {
+  const topic = await findTopicDetailsById(topicId);
+  if (!topic) throw new AppError("Tópico não encontrado.", 404);
+  const current = await findStudyStructure();
+  const expectedIds = current.flatMap((discipline) => discipline.topics).find((item) => item.id === topicId)?.subtopics.map((subtopic) => subtopic.id) ?? [];
+  validateOrderIds(subtopicIds, expectedIds);
+  await reorderSubtopics(topicId, subtopicIds);
 }
 
 function validateStatementText(value: string) {

@@ -1,6 +1,6 @@
 import type {
   ClozeAnswerResult, ClozeQuestionInput, ConceptAnswerResult, ConceptQuestionInput,
-  StudyClozeQuestion, StudyConceptQuestion,
+  StudyClozeQuestion, StudyConceptQuestion, ConceptQuestion, ClozeQuestion,
 } from "../types/authoredQuestion";
 import { createKeyedCache } from "./questionCache";
 
@@ -38,3 +38,19 @@ export const revealConceptAnswer = (id: number) => request<ConceptAnswerResult>(
 export const getCachedStudyClozeQuestions = (subtopicId: number) => clozeStudyCache.peek(subtopicId);
 export const getStudyClozeQuestions = (subtopicId: number) => clozeStudyCache.load(subtopicId, () => request<StudyClozeQuestion[]>(`/study/cloze?subtopicId=${subtopicId}`));
 export const revealClozeAnswer = (id: number) => request<ClozeAnswerResult>(`/study/cloze/${id}/reveal`, { method: "POST" });
+export const getConceptQuestions = () => request<ConceptQuestion[]>("/conceptual");
+export const updateConceptQuestion = async (id: number, input: ConceptQuestionInput & { isActive?: boolean }) => {
+  const updated = await request<ConceptQuestion>(`/conceptual/${id}`, { method: "PUT", body: JSON.stringify(input) });
+  conceptStudyCache.invalidate(); return updated;
+};
+export const deleteConceptQuestion = async (id: number, subtopicId: number) => {
+  await request<void>(`/conceptual/${id}`, { method: "DELETE" }); conceptStudyCache.invalidate(subtopicId);
+};
+export const getClozeQuestions = () => request<ClozeQuestion[]>("/cloze");
+export const updateClozeQuestion = async (id: number, input: ClozeQuestionInput & { isActive?: boolean }) => {
+  const updated = await request<ClozeQuestion>(`/cloze/${id}`, { method: "PUT", body: JSON.stringify(input) });
+  clozeStudyCache.invalidate(); return updated;
+};
+export const deleteClozeQuestion = async (id: number, subtopicId: number) => {
+  await request<void>(`/cloze/${id}`, { method: "DELETE" }); clozeStudyCache.invalidate(subtopicId);
+};

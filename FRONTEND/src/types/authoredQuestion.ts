@@ -7,3 +7,13 @@ export interface ClozeAnswerResult { questionId: number; answer: string; gaps: s
 
 export interface ConceptQuestionInput { subtopicId: number; question: string; answer: string; }
 export interface ClozeQuestionInput { subtopicId: number; textWithAnswers: string; }
+
+interface AuthoredQuestionContext {
+  id: number;
+  subtopicId: number;
+  isActive: boolean;
+  subtopic: { id: number; name: string; topic: { id: number; name: string; discipline: { id: number; name: string } } };
+}
+
+export interface ConceptQuestion extends AuthoredQuestionContext { question: string; answer: string; }
+export interface ClozeQuestion extends AuthoredQuestionContext { textWithAnswers: string; }

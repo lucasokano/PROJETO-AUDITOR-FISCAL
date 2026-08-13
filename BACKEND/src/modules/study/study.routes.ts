@@ -21,6 +21,8 @@ import {
   listDueReviewStatements,
   listDisciplineProgress,
   getDashboard,
+  reorderStudyTopics,
+  reorderStudySubtopics,
 } from "./study.controller.js";
 
 export const studyRoutes = Router();
@@ -84,6 +86,9 @@ studyRoutes.patch(
   "/topics/:topicId",
   updateStudyTopic,
 );
+
+studyRoutes.patch("/disciplines/:disciplineId/topics/order", reorderStudyTopics);
+studyRoutes.patch("/topics/:topicId/subtopics/order", reorderStudySubtopics);
 
 studyRoutes.patch(
   "/subtopics/:subtopicId",

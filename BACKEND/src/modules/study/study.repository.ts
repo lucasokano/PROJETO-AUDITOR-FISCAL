@@ -353,6 +353,28 @@ export function updateSubtopic(
   });
 }
 
+export function reorderTopics(disciplineId: number, topicIds: number[]) {
+  return prisma.$transaction(
+    topicIds.map((topicId, displayOrder) =>
+      prisma.topic.update({
+        where: { id: topicId, disciplineId },
+        data: { displayOrder },
+      }),
+    ),
+  );
+}
+
+export function reorderSubtopics(topicId: number, subtopicIds: number[]) {
+  return prisma.$transaction(
+    subtopicIds.map((subtopicId, displayOrder) =>
+      prisma.subtopic.update({
+        where: { id: subtopicId, topicId },
+        data: { displayOrder },
+      }),
+    ),
+  );
+}
+
 export function deleteDiscipline(
   disciplineId: number,
 ) {

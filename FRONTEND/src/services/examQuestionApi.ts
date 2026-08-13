@@ -28,6 +28,10 @@ export const createExamQuestion = async (input: ExamQuestionInput) => {
   studyQuestionCache.invalidate(input.subtopicId);
   return created;
 };
+export const updateExamQuestion = async (id: number, input: ExamQuestionInput & { isActive?: boolean }) => {
+  const updated = await request<ExamQuestion>(`/questions/${id}`, { method: "PUT", body: JSON.stringify(input) });
+  studyQuestionCache.invalidate(); return updated;
+};
 export const deleteExamQuestion = async (id: number) => {
   await request<void>(`/questions/${id}`, { method: "DELETE" });
   studyQuestionCache.invalidate();

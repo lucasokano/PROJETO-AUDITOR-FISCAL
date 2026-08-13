@@ -24,6 +24,8 @@ import {
   getDueReviewStatements,
   getDisciplineProgress,
   getStudyDashboard,
+  reorderDisciplineTopics,
+  reorderTopicSubtopics,
 } from "./study.service.js";
 
 interface IdRouteParams {
@@ -56,6 +58,30 @@ interface UpdateStatementBody {
 
 interface NameBody {
   name?: unknown;
+}
+
+interface OrderBody { ids?: unknown; }
+
+function parseOrderIds(value: unknown) {
+  return Array.isArray(value) && value.every((id) => Number.isInteger(id) && id > 0)
+    ? value as number[]
+    : null;
+}
+
+export async function reorderStudyTopics(request: Request<IdRouteParams, unknown, OrderBody>, response: Response) {
+  const disciplineId = parsePositiveInteger(request.params.disciplineId);
+  const ids = parseOrderIds(request.body.ids);
+  if (!disciplineId || !ids) { response.status(400).json({ message: "A sequência de tópicos é inválida." }); return; }
+  await reorderDisciplineTopics(disciplineId, ids);
+  response.status(204).send();
+}
+
+export async function reorderStudySubtopics(request: Request<IdRouteParams, unknown, OrderBody>, response: Response) {
+  const topicId = parsePositiveInteger(request.params.topicId);
+  const ids = parseOrderIds(request.body.ids);
+  if (!topicId || !ids) { response.status(400).json({ message: "A sequência de subtópicos é inválida." }); return; }
+  await reorderTopicSubtopics(topicId, ids);
+  response.status(204).send();
 }
 
 interface CreateTopicBody {

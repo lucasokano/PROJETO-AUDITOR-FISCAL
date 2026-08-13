@@ -276,6 +276,22 @@ export async function updateSubtopic(
   return result;
 }
 
+export async function reorderTopics(disciplineId: number, ids: number[]) {
+  await request<void>(`/study/disciplines/${disciplineId}/topics/order`, {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+  invalidateStructure();
+}
+
+export async function reorderSubtopics(topicId: number, ids: number[]) {
+  await request<void>(`/study/topics/${topicId}/subtopics/order`, {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+  invalidateStructure();
+}
+
 export async function deleteDiscipline(
   disciplineId: number,
 ) {
