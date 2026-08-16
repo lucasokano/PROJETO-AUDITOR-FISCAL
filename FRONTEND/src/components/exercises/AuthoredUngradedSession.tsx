@@ -12,6 +12,7 @@ import type {
 interface Props {
   kind: AuthoredQuestionKind;
   subtopicId: number;
+  initialClozeDifficulty?: "easy" | "difficult";
   onProgressChange: (progress: { total: number; answered: number }) => void;
 }
 
@@ -31,7 +32,7 @@ function highlightedClozeAnswer(answer: string, gaps: string[]): ReactNode[] {
   return parts;
 }
 
-export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: Props) {
+export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficulty = "difficult", onProgressChange }: Props) {
   const cachedQuestions = kind === "conceptual" ? getCachedStudyConceptQuestions(subtopicId) : null;
   const [questions, setQuestions] = useState<Array<StudyConceptQuestion | StudyClozeQuestion>>(cachedQuestions ?? []);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,7 +40,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
   const [isClozeRevealed, setIsClozeRevealed] = useState(false);
   const [isLoading, setIsLoading] = useState(!cachedQuestions);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clozeDifficulty, setClozeDifficulty] = useState<"easy" | "difficult">("easy");
+  const [clozeDifficulty, setClozeDifficulty] = useState<"easy" | "difficult">(initialClozeDifficulty);
   const [easyTotal, setEasyTotal] = useState(0);
   const [difficultTotal, setDifficultTotal] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -66,7 +67,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
           setQuestions(localSession.questions);
           setEasyTotal(localSession.easyTotal);
           setDifficultTotal(localSession.difficultTotal);
-          onProgressChange({ total: localSession.easyTotal, answered: 0 });
+          onProgressChange({ total: initialClozeDifficulty === "difficult" ? localSession.difficultTotal : localSession.easyTotal, answered: 0 });
           setIsLoading(false);
         }
         try {
@@ -76,7 +77,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
             setQuestions(synchronizedSession.questions);
             setEasyTotal(synchronizedSession.easyTotal);
             setDifficultTotal(synchronizedSession.difficultTotal);
-            onProgressChange({ total: synchronizedSession.easyTotal, answered: 0 });
+            onProgressChange({ total: initialClozeDifficulty === "difficult" ? synchronizedSession.difficultTotal : synchronizedSession.easyTotal, answered: 0 });
           }
         } catch (requestError) {
           if (!hasLocalItems && !cancelled) setError(requestError instanceof Error ? requestError.message : "Conteúdo offline indisponível.");
@@ -86,7 +87,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
       }).catch((requestError: Error) => { if (!cancelled) { setError(requestError.message); setIsLoading(false); } });
     }
     return () => { cancelled = true; };
-  }, [kind, subtopicId, onProgressChange]);
+  }, [kind, subtopicId, initialClozeDifficulty, onProgressChange]);
 
   const visibleQuestions = useMemo(() => kind === "cloze"
     ? (questions as StudyClozeQuestion[]).filter((question) => question.isDifficult === (clozeDifficulty === "difficult"))
@@ -198,7 +199,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
       {difficultyTabs}
       <header>
         <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
-        {isCloze && <div className="cloze-question-tools"><small>{current.gapCount} lacuna(s)</small><button type="button" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button></div>}
+        {isCloze && <div className="cloze-question-tools"><button type="button" className="desktop-cloze-move" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button></div>}
       </header>
       <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}>{prompt}</p>
       {error && <div className="form-message form-error">{error}</div>}
@@ -207,9 +208,9 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
         {result || isClozeRevealed ? (
           <button type="button" className="authored-session-action authored-next-button" disabled={isLoadingMore} onClick={() => void next()}>{currentIndex + 1 === (kind === "cloze" ? activeTotal : visibleQuestions.length) ? "Concluir" : "Próximo"}</button>
         ) : (
-          <button type="button" className="authored-session-action authored-reveal-button" disabled={isSubmitting} onClick={() => void reveal()} aria-label={isSubmitting ? "Carregando gabarito" : "Mostrar gabarito"} title="Mostrar gabarito">
+          <><button type="button" className="authored-session-action authored-reveal-button" disabled={isSubmitting} onClick={() => void reveal()} aria-label={isSubmitting ? "Carregando gabarito" : "Mostrar gabarito"} title="Mostrar gabarito">
             <Eye size={18} aria-hidden="true" />
-          </button>
+          </button>{isCloze && <button type="button" className="mobile-cloze-move" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button>}</>
         )}
       </footer>
     </section>

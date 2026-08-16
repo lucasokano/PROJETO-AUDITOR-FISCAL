@@ -50,6 +50,7 @@ interface AnswerResult {
 export function Discipline() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedExerciseMode = searchParams.get("exercise") ?? "true-false";
+  const requestedClozeDifficulty = searchParams.get("difficulty") === "easy" ? "easy" : "difficult";
   const requestedStructuredType = searchParams.get("type");
   const requestedStructuredGroupId = Number(searchParams.get("groupId"));
   const {
@@ -471,7 +472,7 @@ useEffect(() => {
             Conceitual
           </button>
 
-          <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "cloze" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("cloze"); setSearchParams({ exercise: "cloze" }, { replace: true }); }}>
+          <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "cloze" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("cloze"); setSearchParams({ exercise: "cloze", difficulty: "difficult" }, { replace: true }); }}>
             Lacunas
           </button>
 
@@ -497,7 +498,7 @@ useEffect(() => {
       )}
 
       {activeAuthoredType && subtopic ? (
-        <AuthoredUngradedSession kind={activeAuthoredType} subtopicId={subtopic.id} onProgressChange={handleAuthoredProgress} />
+        <AuthoredUngradedSession key={`${subtopic.id}-${activeAuthoredType}-${requestedClozeDifficulty}`} kind={activeAuthoredType} subtopicId={subtopic.id} initialClozeDifficulty={requestedClozeDifficulty} onProgressChange={handleAuthoredProgress} />
       ) : activeExercise && subtopic ? (
         <EmbeddedExerciseSession
           subtopicId={subtopic.id}

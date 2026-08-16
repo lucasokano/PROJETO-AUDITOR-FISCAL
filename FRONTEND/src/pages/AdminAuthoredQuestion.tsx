@@ -11,7 +11,7 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [clozeText, setClozeText] = useState("");
-  const [isDifficult, setIsDifficult] = useState(false);
+  const [isDifficult, setIsDifficult] = useState(true);
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<"single" | "bulk">("single");
@@ -32,7 +32,7 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
         setQuestion(""); setAnswer("");
       } else {
         await createClozeQuestion({ subtopicId: Number(subtopicId), textWithAnswers: clozeText, isDifficult });
-        setClozeText(""); setIsDifficult(false);
+        setClozeText(""); setIsDifficult(true);
       }
       setMessage("Questão adicionada com sucesso.");
     } catch (error) {

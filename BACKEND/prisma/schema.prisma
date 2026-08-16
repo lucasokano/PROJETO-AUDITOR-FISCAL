@@ -90,7 +90,7 @@ model ClozeQuestion {
   id              Int      @id @default(autoincrement())
   subtopicId      Int      @map("subtopic_id")
   textWithAnswers String   @map("text_with_answers")
-  isDifficult     Boolean  @default(false) @map("is_difficult")
+  isDifficult     Boolean  @default(true) @map("is_difficult")
   isActive        Boolean  @default(true) @map("is_active")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")

@@ -19,9 +19,13 @@ export function MobileStudyNavigation({ onClose }: MobileStudyNavigationProps) {
   const topic = discipline?.topics.find((item) => item.slug === topicSlug);
   const requestedMode = new URLSearchParams(location.search).get("exercise") ?? "true-false";
   const exerciseMode = ["exam", "conceptual", "cloze"].includes(requestedMode) ? requestedMode : "true-false";
+  const clozeDifficulty = new URLSearchParams(location.search).get("difficulty") === "easy" ? "easy" : "difficult";
 
   function withExerciseMode(path: string) {
-    return exerciseMode === "true-false" ? path : `${path}?exercise=${exerciseMode}`;
+    if (exerciseMode === "true-false") return path;
+    const params = new URLSearchParams({ exercise: exerciseMode });
+    if (exerciseMode === "cloze") params.set("difficulty", clozeDifficulty);
+    return `${path}?${params}`;
   }
 
   function selectDiscipline(slug: string) {
@@ -46,7 +50,18 @@ export function MobileStudyNavigation({ onClose }: MobileStudyNavigationProps) {
   }
 
   function selectExerciseMode(mode: string) {
-    navigate(`${location.pathname}${mode === "true-false" ? "" : `?exercise=${mode}`}`);
+    if (mode === "true-false") navigate(location.pathname);
+    else {
+      const params = new URLSearchParams({ exercise: mode });
+      if (mode === "cloze") params.set("difficulty", "difficult");
+      navigate(`${location.pathname}?${params}`);
+    }
+    onClose();
+  }
+
+  function selectClozeDifficulty(difficulty: string) {
+    const params = new URLSearchParams({ exercise: "cloze", difficulty });
+    navigate(`${location.pathname}?${params}`);
     onClose();
   }
 
@@ -57,6 +72,7 @@ export function MobileStudyNavigation({ onClose }: MobileStudyNavigationProps) {
       <label><span>Tópico</span><select value={topicSlug} disabled={!discipline} onChange={(event) => selectTopic(event.target.value)}><option value="">Selecione</option>{discipline?.topics.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</select></label>
       <label><span>Subtópico</span><select value={subtopicSlug} disabled={!topic} onChange={(event) => selectSubtopic(event.target.value)}><option value="">Selecione</option>{topic?.subtopics.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</select></label>
       <label><span>Tipo de questão</span><select value={exerciseMode} disabled={!subtopicSlug} onChange={(event) => selectExerciseMode(event.target.value)}><option value="true-false">Afirmações V/F</option><option value="exam">Questões de prova</option><option value="conceptual">Conceitual</option><option value="cloze">Lacunas</option></select></label>
+      {exerciseMode === "cloze" && <label><span>Dificuldade</span><select value={clozeDifficulty} onChange={(event) => selectClozeDifficulty(event.target.value)}><option value="difficult">Difíceis</option><option value="easy">Fáceis</option></select></label>}
       <button type="button" className="mobile-navigation-logout" onClick={() => void logout().then(() => navigate("/login", { replace: true }))}>Sair</button>
     </aside>
   );
