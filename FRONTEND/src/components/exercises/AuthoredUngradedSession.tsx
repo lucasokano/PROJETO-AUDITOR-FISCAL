@@ -178,8 +178,8 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
   const title = kind === "conceptual" ? "Questão conceitual" : "Questão de lacuna";
   const difficultyTabs = kind === "cloze" && (
     <div className="cloze-difficulty-tabs" aria-label="Dificuldade das questões">
-      <button type="button" className={clozeDifficulty === "easy" ? "is-active" : ""} onClick={() => selectDifficulty("easy")}>Fáceis <span>{easyCount}</span></button>
       <button type="button" className={clozeDifficulty === "difficult" ? "is-active" : ""} onClick={() => selectDifficulty("difficult")}>Difíceis <span>{difficultCount}</span></button>
+      <button type="button" className={clozeDifficulty === "easy" ? "is-active" : ""} onClick={() => selectDifficulty("easy")}>Fáceis <span>{easyCount}</span></button>
     </div>
   );
   if (isLoading) return <div className="real-question-state">Carregando questões...</div>;
