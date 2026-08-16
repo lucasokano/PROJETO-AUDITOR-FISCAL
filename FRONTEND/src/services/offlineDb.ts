@@ -2,14 +2,19 @@ import type { StudyClozeQuestion } from "../types/authoredQuestion";
 import type { Discipline } from "../types/study";
 
 const DATABASE_NAME = "gema-db";
-const DATABASE_VERSION = 3;
+const DATABASE_VERSION = 4;
 const STRUCTURE_STORE = "structure";
 const QUESTIONS_STORE = "fillBlankQuestions";
 const STAGING_STORE = "fillBlankQuestionStaging";
 const METADATA_STORE = "syncMetadata";
 
 interface StoredStructure { key: "current"; value: Discipline[]; }
+interface StoredClozeQuestion extends StudyClozeQuestion { difficultyKey: 0 | 1; }
 export interface SyncMetadata { key: string; version: string; updatedAt: string; }
+
+function storedClozeQuestion(question: StudyClozeQuestion): StoredClozeQuestion {
+  return { ...question, difficultyKey: question.isDifficult ? 1 : 0 };
+}
 
 function indexedDbAvailable() {
   return typeof indexedDB !== "undefined";
@@ -40,10 +45,19 @@ async function openDatabase() {
       if (!database.objectStoreNames.contains(QUESTIONS_STORE)) {
         const store = database.createObjectStore(QUESTIONS_STORE, { keyPath: "id" });
         store.createIndex("subtopicId", "subtopicId", { unique: false });
-        store.createIndex("subtopicDifficulty", ["subtopicId", "isDifficult"], { unique: false });
+        store.createIndex("subtopicDifficulty", ["subtopicId", "difficultyKey"], { unique: false });
       } else {
         const store = request.transaction!.objectStore(QUESTIONS_STORE);
-        if (!store.indexNames.contains("subtopicDifficulty")) store.createIndex("subtopicDifficulty", ["subtopicId", "isDifficult"], { unique: false });
+        if (store.indexNames.contains("subtopicDifficulty")) store.deleteIndex("subtopicDifficulty");
+        store.createIndex("subtopicDifficulty", ["subtopicId", "difficultyKey"], { unique: false });
+        const cursorRequest = store.openCursor();
+        cursorRequest.onsuccess = () => {
+          const cursor = cursorRequest.result;
+          if (!cursor) return;
+          const question = cursor.value as StudyClozeQuestion;
+          cursor.update(storedClozeQuestion(question));
+          cursor.continue();
+        };
       }
       if (!database.objectStoreNames.contains(STAGING_STORE)) {
         const store = database.createObjectStore(STAGING_STORE, { keyPath: "id" });
@@ -84,7 +98,7 @@ export async function readOfflineClozeBatch(subtopicId: number, limit = 30, isDi
     const transaction = database.transaction(QUESTIONS_STORE, "readonly");
     const store = transaction.objectStore(QUESTIONS_STORE);
     const index = isDifficult === undefined ? store.index("subtopicId") : store.index("subtopicDifficulty");
-    const range = isDifficult === undefined ? IDBKeyRange.only(subtopicId) : IDBKeyRange.only([subtopicId, isDifficult]);
+    const range = isDifficult === undefined ? IDBKeyRange.only(subtopicId) : IDBKeyRange.only([subtopicId, isDifficult ? 1 : 0]);
     return await requestResult(index.getAll(range, limit) as IDBRequest<StudyClozeQuestion[]>);
   } finally { database.close(); }
 }
@@ -98,7 +112,7 @@ export async function replaceOfflineClozeQuestions(subtopicId: number, questions
     const index = store.index("subtopicId");
     const keys = await requestResult(index.getAllKeys(IDBKeyRange.only(subtopicId)));
     keys.forEach((key) => store.delete(key));
-    questions.forEach((question) => store.put(question));
+    questions.forEach((question) => store.put(storedClozeQuestion(question)));
     transaction.objectStore(METADATA_STORE).put(metadata);
     await transactionDone(transaction);
   } finally { database.close(); }
@@ -124,7 +138,7 @@ export async function appendOfflineClozeSyncPage(questions: StudyClozeQuestion[]
   if (!database) return;
   try {
     const transaction = database.transaction(STAGING_STORE, "readwrite");
-    questions.forEach((question) => transaction.objectStore(STAGING_STORE).put(question));
+    questions.forEach((question) => transaction.objectStore(STAGING_STORE).put(storedClozeQuestion(question)));
     await transactionDone(transaction);
   } finally { database.close(); }
 }
