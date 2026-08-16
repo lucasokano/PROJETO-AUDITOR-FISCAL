@@ -4,7 +4,7 @@ import {
   appendOfflineClozeSyncPage,
   beginOfflineClozeSync,
   commitOfflineClozeSync,
-  readOfflineClozeBatch,
+  readOfflineClozePage,
   readOfflineStructure,
   readSyncMetadata,
   replaceOfflineStructure,
@@ -47,10 +47,14 @@ export async function synchronizeStructure(remoteVersions?: RemoteSyncVersions) 
 export async function loadOfflineClozeSession(subtopicId: number) {
   const perDifficulty = SESSION_SIZE / 2;
   const [easy, difficult] = await Promise.all([
-    readOfflineClozeBatch(subtopicId, perDifficulty, false),
-    readOfflineClozeBatch(subtopicId, perDifficulty, true),
+    readOfflineClozePage(subtopicId, perDifficulty, false),
+    readOfflineClozePage(subtopicId, perDifficulty, true),
   ]);
-  return [...easy, ...difficult];
+  return { questions: [...easy.items, ...difficult.items], easyTotal: easy.total, difficultTotal: difficult.total };
+}
+
+export async function loadMoreOfflineClozeQuestions(subtopicId: number, isDifficult: boolean, offset: number) {
+  return readOfflineClozePage(subtopicId, SESSION_SIZE / 2, isDifficult, offset);
 }
 
 export async function synchronizeClozeSubtopic(subtopicId: number, remoteVersions?: RemoteSyncVersions) {

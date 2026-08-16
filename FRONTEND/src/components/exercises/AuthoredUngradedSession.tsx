@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeftRight, Eye } from "lucide-react";
 import {
   changeClozeDifficulty, getCachedStudyConceptQuestions,
   getStudyConceptQuestions, revealConceptAnswer,
 } from "../../services/authoredQuestionApi";
-import { loadOfflineClozeSession, synchronizeClozeSubtopic } from "../../services/offlineSync";
+import { loadMoreOfflineClozeQuestions, loadOfflineClozeSession, synchronizeClozeSubtopic } from "../../services/offlineSync";
 import type {
   AuthoredQuestionKind, ConceptAnswerResult, StudyClozeQuestion, StudyConceptQuestion,
 } from "../../types/authoredQuestion";
@@ -40,6 +40,10 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
   const [isLoading, setIsLoading] = useState(!cachedQuestions);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clozeDifficulty, setClozeDifficulty] = useState<"easy" | "difficult">("easy");
+  const [easyTotal, setEasyTotal] = useState(0);
+  const [difficultTotal, setDifficultTotal] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,22 +59,27 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
         .finally(() => { if (!cancelled) setIsLoading(false); });
     } else {
       setIsLoading(true); setQuestions([]);
-      void loadOfflineClozeSession(subtopicId).then(async (localItems) => {
+      void loadOfflineClozeSession(subtopicId).then(async (localSession) => {
         if (cancelled) return;
-        if (localItems.length) {
-          setQuestions(localItems);
-          onProgressChange({ total: localItems.filter((question) => !question.isDifficult).length, answered: 0 });
+        const hasLocalItems = localSession.questions.length > 0;
+        if (hasLocalItems) {
+          setQuestions(localSession.questions);
+          setEasyTotal(localSession.easyTotal);
+          setDifficultTotal(localSession.difficultTotal);
+          onProgressChange({ total: localSession.easyTotal, answered: 0 });
           setIsLoading(false);
         }
         try {
           await synchronizeClozeSubtopic(subtopicId);
-          if (!localItems.length && !cancelled) {
-            const synchronizedItems = await loadOfflineClozeSession(subtopicId);
-            setQuestions(synchronizedItems);
-            onProgressChange({ total: synchronizedItems.filter((question) => !question.isDifficult).length, answered: 0 });
+          if (!hasLocalItems && !cancelled) {
+            const synchronizedSession = await loadOfflineClozeSession(subtopicId);
+            setQuestions(synchronizedSession.questions);
+            setEasyTotal(synchronizedSession.easyTotal);
+            setDifficultTotal(synchronizedSession.difficultTotal);
+            onProgressChange({ total: synchronizedSession.easyTotal, answered: 0 });
           }
         } catch (requestError) {
-          if (!localItems.length && !cancelled) setError(requestError instanceof Error ? requestError.message : "Conteúdo offline indisponível.");
+          if (!hasLocalItems && !cancelled) setError(requestError instanceof Error ? requestError.message : "Conteúdo offline indisponível.");
         } finally {
           if (!cancelled) setIsLoading(false);
         }
@@ -83,8 +92,29 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
     ? (questions as StudyClozeQuestion[]).filter((question) => question.isDifficult === (clozeDifficulty === "difficult"))
     : questions, [kind, questions, clozeDifficulty]);
   const current = visibleQuestions[currentIndex];
-  const easyCount = kind === "cloze" ? (questions as StudyClozeQuestion[]).filter((question) => !question.isDifficult).length : 0;
-  const difficultCount = kind === "cloze" ? questions.length - easyCount : 0;
+  const easyCount = kind === "cloze" ? easyTotal : 0;
+  const difficultCount = kind === "cloze" ? difficultTotal : 0;
+  const activeTotal = clozeDifficulty === "difficult" ? difficultCount : easyCount;
+
+  const loadMoreClozeQuestions = useCallback(async () => {
+    if (kind !== "cloze" || loadingMoreRef.current || visibleQuestions.length >= activeTotal) return 0;
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      const page = await loadMoreOfflineClozeQuestions(subtopicId, clozeDifficulty === "difficult", visibleQuestions.length);
+      setQuestions((items) => {
+        const knownIds = new Set(items.map((item) => item.id));
+        return [...items, ...page.items.filter((item) => !knownIds.has(item.id))];
+      });
+      return page.items.length;
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível carregar o próximo lote.");
+      return 0;
+    } finally {
+      loadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [kind, visibleQuestions.length, activeTotal, subtopicId, clozeDifficulty]);
 
   function selectDifficulty(difficulty: "easy" | "difficult") {
     setClozeDifficulty(difficulty);
@@ -103,10 +133,12 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
       setQuestions((items) => items.map((item) => item.id === current.id && "isDifficult" in item
         ? { ...item, isDifficult: updated.isDifficult }
         : item));
+      if (current.isDifficult) { setDifficultTotal((total) => Math.max(0, total - 1)); setEasyTotal((total) => total + 1); }
+      else { setEasyTotal((total) => Math.max(0, total - 1)); setDifficultTotal((total) => total + 1); }
       setResult(null);
       setIsClozeRevealed(false);
       if (currentIndex > 0 && currentIndex === visibleQuestions.length - 1) setCurrentIndex(currentIndex - 1);
-      const remaining = Math.max(0, visibleQuestions.length - 1);
+      const remaining = Math.max(0, activeTotal - 1);
       onProgressChange({ total: remaining, answered: Math.min(currentIndex, remaining) });
     } catch (requestError) {
       setError((requestError as Error).message);
@@ -119,7 +151,10 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
     if (!current || result || isClozeRevealed) return;
     if (kind === "cloze") {
       setIsClozeRevealed(true);
-      onProgressChange({ total: visibleQuestions.length, answered: currentIndex + 1 });
+      onProgressChange({ total: activeTotal, answered: currentIndex + 1 });
+      if (visibleQuestions.length < activeTotal && currentIndex >= Math.max(0, visibleQuestions.length - 5)) {
+        void loadMoreClozeQuestions();
+      }
       return;
     }
     try {
@@ -131,8 +166,14 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
     finally { setIsSubmitting(false); }
   }
 
-  function next() { setCurrentIndex((index) => index + 1); setResult(null); setIsClozeRevealed(false); }
-  function restart() { setCurrentIndex(0); setResult(null); setIsClozeRevealed(false); onProgressChange({ total: visibleQuestions.length, answered: 0 }); }
+  async function next() {
+    if (kind === "cloze" && currentIndex + 1 >= visibleQuestions.length && visibleQuestions.length < activeTotal) {
+      const loaded = await loadMoreClozeQuestions();
+      if (!loaded) return;
+    }
+    setCurrentIndex((index) => index + 1); setResult(null); setIsClozeRevealed(false);
+  }
+  function restart() { setCurrentIndex(0); setResult(null); setIsClozeRevealed(false); onProgressChange({ total: kind === "cloze" ? activeTotal : visibleQuestions.length, answered: 0 }); }
 
   const title = kind === "conceptual" ? "Questão conceitual" : "Questão de lacuna";
   const difficultyTabs = kind === "cloze" && (
@@ -156,7 +197,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
     <section className="real-question-session authored-ungraded-session">
       {difficultyTabs}
       <header>
-        <span>{title} {currentIndex + 1} de {visibleQuestions.length}</span>
+        <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
         {isCloze && <div className="cloze-question-tools"><small>{current.gapCount} lacuna(s)</small><button type="button" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button></div>}
       </header>
       <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}>{prompt}</p>
@@ -164,7 +205,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, onProgressChange }: 
       {result && !isCloze && <div className="authored-answer-key"><span>Gabarito</span><p>{result.answer}</p></div>}
       <footer>
         {result || isClozeRevealed ? (
-          <button type="button" className="authored-session-action authored-next-button" onClick={next}>{currentIndex + 1 === visibleQuestions.length ? "Concluir" : "Próximo"}</button>
+          <button type="button" className="authored-session-action authored-next-button" disabled={isLoadingMore} onClick={() => void next()}>{currentIndex + 1 === (kind === "cloze" ? activeTotal : visibleQuestions.length) ? "Concluir" : "Próximo"}</button>
         ) : (
           <button type="button" className="authored-session-action authored-reveal-button" disabled={isSubmitting} onClick={() => void reveal()} aria-label={isSubmitting ? "Carregando gabarito" : "Mostrar gabarito"} title="Mostrar gabarito">
             <Eye size={18} aria-hidden="true" />

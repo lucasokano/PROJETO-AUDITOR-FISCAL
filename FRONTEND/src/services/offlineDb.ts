@@ -92,14 +92,34 @@ export async function replaceOfflineStructure(structure: Discipline[], metadata:
 }
 
 export async function readOfflineClozeBatch(subtopicId: number, limit = 30, isDifficult?: boolean) {
+  const page = await readOfflineClozePage(subtopicId, limit, isDifficult, 0);
+  return page.items;
+}
+
+export async function readOfflineClozePage(subtopicId: number, limit = 30, isDifficult?: boolean, offset = 0) {
   const database = await openDatabase();
-  if (!database) return [];
+  if (!database) return { items: [], total: 0 };
   try {
     const transaction = database.transaction(QUESTIONS_STORE, "readonly");
     const store = transaction.objectStore(QUESTIONS_STORE);
     const index = isDifficult === undefined ? store.index("subtopicId") : store.index("subtopicDifficulty");
     const range = isDifficult === undefined ? IDBKeyRange.only(subtopicId) : IDBKeyRange.only([subtopicId, isDifficult ? 1 : 0]);
-    return await requestResult(index.getAll(range, limit) as IDBRequest<StudyClozeQuestion[]>);
+    const totalPromise = requestResult(index.count(range));
+    const itemsPromise = new Promise<StudyClozeQuestion[]>((resolve, reject) => {
+      const items: StudyClozeQuestion[] = [];
+      const request = index.openCursor(range);
+      let advanced = offset === 0;
+      request.onerror = () => reject(request.error ?? new Error("Falha ao ler questões offline."));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor || items.length >= limit) { resolve(items); return; }
+        if (!advanced) { advanced = true; cursor.advance(offset); return; }
+        items.push(cursor.value as StudyClozeQuestion);
+        cursor.continue();
+      };
+    });
+    const [items, total] = await Promise.all([itemsPromise, totalPromise]);
+    return { items, total };
   } finally { database.close(); }
 }
 
@@ -179,10 +199,7 @@ export async function invalidateOfflineClozeSubtopic(subtopicId: number) {
   const database = await openDatabase();
   if (!database) return;
   try {
-    const transaction = database.transaction([QUESTIONS_STORE, METADATA_STORE], "readwrite");
-    const store = transaction.objectStore(QUESTIONS_STORE);
-    const keys = await requestResult(store.index("subtopicId").getAllKeys(IDBKeyRange.only(subtopicId)));
-    keys.forEach((key) => store.delete(key));
+    const transaction = database.transaction(METADATA_STORE, "readwrite");
     transaction.objectStore(METADATA_STORE).delete(`cloze:${subtopicId}`);
     await transactionDone(transaction);
   } finally { database.close(); }
