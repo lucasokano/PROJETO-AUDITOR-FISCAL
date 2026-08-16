@@ -201,7 +201,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
         <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
         {isCloze && <div className="cloze-question-tools"><button type="button" className="desktop-cloze-move" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button></div>}
       </header>
-      <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}>{prompt}</p>
+      <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}><span>{prompt}</span></p>
       {error && <div className="form-message form-error">{error}</div>}
       {result && !isCloze && <div className="authored-answer-key"><span>Gabarito</span><p>{result.answer}</p></div>}
       <footer>
