@@ -9,6 +9,7 @@ import { knowledgeRoutes } from "./modules/knowledge/knowledge.routes.js";
 import { studyRoutes } from "./modules/study/study.routes.js";
 import { examQuestionRoutes } from "./modules/examQuestions/exam-question.routes.js";
 import { authoredQuestionRoutes } from "./modules/authoredQuestions/authored-question.routes.js";
+import { syncRoutes } from "./modules/sync/sync.routes.js";
 
 export function createApp() {
   const app = express();
@@ -21,6 +22,7 @@ export function createApp() {
     response.status(200).json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
   });
   app.use("/api/auth", authRoutes);
+  app.use("/api/sync", requireAuth, syncRoutes);
   app.use("/api/study", requireAuth, studyRoutes);
   app.use("/api/knowledge", requireAuth, knowledgeRoutes);
   app.use("/api/exercises", requireAuth, exerciseRoutes);

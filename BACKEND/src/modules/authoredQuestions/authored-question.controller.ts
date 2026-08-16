@@ -2,8 +2,9 @@ import type { Request, Response } from "express";
 import {
   createClozeQuestion, createConceptQuestion, deleteClozeQuestion, deleteConceptQuestion,
   listClozeQuestions, listConceptQuestions, listStudyClozeQuestions, listStudyConceptQuestions,
-  revealClozeAnswer, revealConceptAnswer, updateClozeQuestion, updateConceptQuestion,
+  revealConceptAnswer, updateClozeQuestion, updateConceptQuestion,
   previewClozeImport, importClozeQuestions,
+  changeClozeDifficulty,
 } from "./authored-question.service.js";
 
 function positiveInteger(value: unknown) {
@@ -90,8 +91,9 @@ export async function getClozeQuestions(_request: Request, response: Response) {
 export async function postClozeQuestion(request: Request, response: Response) {
   const subtopicId = positiveInteger(request.body?.subtopicId);
   const textWithAnswers = requiredString(request.body?.textWithAnswers);
-  if (!subtopicId || textWithAnswers === null) return sendInvalid(response);
-  response.status(201).json(await createClozeQuestion({ subtopicId, textWithAnswers }));
+  const isDifficult = optionalBoolean(request.body?.isDifficult);
+  if (!subtopicId || textWithAnswers === null || isDifficult === null) return sendInvalid(response);
+  response.status(201).json(await createClozeQuestion({ subtopicId, textWithAnswers, isDifficult }));
 }
 
 export async function putClozeQuestion(request: Request, response: Response) {
@@ -99,8 +101,16 @@ export async function putClozeQuestion(request: Request, response: Response) {
   const subtopicId = positiveInteger(request.body?.subtopicId);
   const textWithAnswers = requiredString(request.body?.textWithAnswers);
   const isActive = optionalBoolean(request.body?.isActive);
-  if (!id || !subtopicId || textWithAnswers === null || isActive === null) return sendInvalid(response);
-  response.json(await updateClozeQuestion(id, { subtopicId, textWithAnswers, isActive }));
+  const isDifficult = optionalBoolean(request.body?.isDifficult);
+  if (!id || !subtopicId || textWithAnswers === null || isActive === null || isDifficult === null) return sendInvalid(response);
+  response.json(await updateClozeQuestion(id, { subtopicId, textWithAnswers, isActive, isDifficult }));
+}
+
+export async function patchClozeDifficulty(request: Request, response: Response) {
+  const id = positiveInteger(request.params.questionId);
+  const isDifficult = request.body?.isDifficult;
+  if (!id || typeof isDifficult !== "boolean") return sendInvalid(response);
+  response.json(await changeClozeDifficulty(id, isDifficult));
 }
 
 export async function removeClozeQuestion(request: Request, response: Response) {
@@ -111,12 +121,9 @@ export async function removeClozeQuestion(request: Request, response: Response) 
 
 export async function getStudyClozeQuestions(request: Request, response: Response) {
   const subtopicId = positiveInteger(request.query.subtopicId);
+  const requestedLimit = positiveInteger(request.query.limit) ?? 30;
+  const cursor = request.query.cursor === undefined ? undefined : positiveInteger(request.query.cursor);
   if (!subtopicId) return sendInvalid(response);
-  response.json(await listStudyClozeQuestions(subtopicId));
-}
-
-export async function revealStudyClozeQuestion(request: Request, response: Response) {
-  const id = positiveInteger(request.params.questionId);
-  if (!id) return sendInvalid(response);
-  response.json(await revealClozeAnswer(id));
+  if (requestedLimit > 50 || (request.query.cursor !== undefined && !cursor)) return sendInvalid(response);
+  response.json(await listStudyClozeQuestions(subtopicId, requestedLimit, cursor ?? undefined));
 }

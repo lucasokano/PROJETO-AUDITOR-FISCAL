@@ -4,8 +4,12 @@ import { Sidebar } from "./Sidebar";
 import { SubtopicMenu } from "./SubtopicMenu";
 import { TopBar } from "./TopBar";
 import { MobileStudyNavigation, MobileStudyRedirect } from "./MobileStudyNavigation";
+import { useStudy } from "../contexts/StudyContext";
+import { estimateOfflineStorage } from "../services/offlineDb";
 
 export function Layout() {
+  const { isOffline } = useStudy();
+  const [storageLabel, setStorageLabel] = useState("");
   const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 800px)").matches);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => !window.matchMedia("(max-width: 800px)").matches);
 
@@ -14,6 +18,15 @@ export function Layout() {
     const update = () => { setIsMobile(media.matches); setIsSidebarOpen(!media.matches); };
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    void estimateOfflineStorage().then((estimate) => {
+      if (!estimate) return;
+      const megabytes = (estimate.usage / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+      const gigabytes = (estimate.quota / 1024 / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+      setStorageLabel(`Conteúdo offline: ${megabytes} MB · quota estimada: ${gigabytes} GB`);
+    }).catch(() => undefined);
   }, []);
 
   function toggleSidebar() {
@@ -29,6 +42,7 @@ export function Layout() {
 
       <div className="main-container">
         <TopBar onMenuToggle={toggleSidebar} />
+        {isOffline && <div className="offline-content-indicator" title={storageLabel}>Offline — usando conteúdo salvo neste dispositivo.</div>}
 
         <main className="content">
           <Outlet />

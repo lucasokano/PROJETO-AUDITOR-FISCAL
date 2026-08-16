@@ -6,6 +6,19 @@ const HAS_GAP_PATTERN = /\{\{\s*[^{}]+?\s*\}\}/;
 const TOPIC_HEADER = /^\[Tópico:\s*(.+)]$/i;
 const SUBTOPIC_HEADER = /^\[Subtópico:\s*(.+)]$/i;
 
+export function toStudyClozeQuestion(question: { id: number; subtopicId: number; textWithAnswers: string; isDifficult: boolean }) {
+  const answers = Array.from(question.textWithAnswers.matchAll(GAP_PATTERN), (match) => match[1]!.trim());
+  return {
+    id: question.id,
+    subtopicId: question.subtopicId,
+    isDifficult: question.isDifficult,
+    text: question.textWithAnswers.replace(GAP_PATTERN, "__________"),
+    answer: question.textWithAnswers.replace(GAP_PATTERN, (_match, gap: string) => gap.trim()),
+    answers,
+    gapCount: answers.length,
+  };
+}
+
 export interface ClozeImportPreviewItem {
   line: number;
   topic: string;
@@ -155,9 +168,9 @@ export async function revealConceptAnswer(id: number) {
   return { questionId: question.id, answer: question.answer, graded: false as const };
 }
 
-export async function createClozeQuestion(input: { subtopicId: number; textWithAnswers: string }) {
+export async function createClozeQuestion(input: { subtopicId: number; textWithAnswers: string; isDifficult?: boolean }) {
   await ensureSubtopic(input.subtopicId);
-  return prisma.clozeQuestion.create({ data: { subtopicId: input.subtopicId, textWithAnswers: validClozeText(input.textWithAnswers) } });
+  return prisma.clozeQuestion.create({ data: { subtopicId: input.subtopicId, textWithAnswers: validClozeText(input.textWithAnswers), isDifficult: input.isDifficult } });
 }
 
 export function listClozeQuestions() {
@@ -167,12 +180,13 @@ export function listClozeQuestions() {
   });
 }
 
-export async function updateClozeQuestion(id: number, input: { subtopicId: number; textWithAnswers: string; isActive?: boolean }) {
+export async function updateClozeQuestion(id: number, input: { subtopicId: number; textWithAnswers: string; isActive?: boolean; isDifficult?: boolean }) {
   await ensureSubtopic(input.subtopicId);
   return prisma.clozeQuestion.update({ where: { id }, data: {
     subtopicId: input.subtopicId,
     textWithAnswers: validClozeText(input.textWithAnswers),
     isActive: input.isActive,
+    isDifficult: input.isDifficult,
   } });
 }
 
@@ -180,27 +194,22 @@ export function deleteClozeQuestion(id: number) {
   return prisma.clozeQuestion.delete({ where: { id } });
 }
 
-export async function listStudyClozeQuestions(subtopicId: number) {
+export async function listStudyClozeQuestions(subtopicId: number, limit = 30, cursor?: number) {
   const questions = await prisma.clozeQuestion.findMany({
     where: { subtopicId, isActive: true },
-    select: { id: true, subtopicId: true, textWithAnswers: true },
-    orderBy: { createdAt: "asc" },
+    select: { id: true, subtopicId: true, textWithAnswers: true, isDifficult: true },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take: limit + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
-  return questions.map(({ textWithAnswers, ...question }) => ({
-    ...question,
-    text: textWithAnswers.replace(GAP_PATTERN, "__________"),
-    gapCount: Array.from(textWithAnswers.matchAll(GAP_PATTERN)).length,
-  }));
+  const hasMore = questions.length > limit;
+  const page = questions.slice(0, limit);
+  const items = page.map(toStudyClozeQuestion);
+  return { items, nextCursor: hasMore ? page.at(-1)?.id ?? null : null };
 }
 
-export async function revealClozeAnswer(id: number) {
-  const question = await prisma.clozeQuestion.findFirst({ where: { id, isActive: true }, select: { id: true, textWithAnswers: true } });
-  if (!question) throw new AppError("Questão de lacuna não encontrada ou inativa.", 404);
-  const gaps: string[] = [];
-  const answer = question.textWithAnswers.replace(GAP_PATTERN, (_match, gap: string) => {
-    const normalized = gap.trim();
-    gaps.push(normalized);
-    return normalized;
-  });
-  return { questionId: question.id, answer, gaps, graded: false as const };
+export async function changeClozeDifficulty(id: number, isDifficult: boolean) {
+  const question = await prisma.clozeQuestion.findUnique({ where: { id }, select: { id: true } });
+  if (!question) throw new AppError("Questão de lacuna não encontrada.", 404);
+  return prisma.clozeQuestion.update({ where: { id }, data: { isDifficult }, select: { id: true, subtopicId: true, isDifficult: true } });
 }

@@ -2398,6 +2398,14 @@ select option[value=""] { color: #7f8b9b; }
 .cloze-import-table .is-valid > strong { color: #4ade80; }
 .cloze-import-table .is-invalid > strong { color: #f87171; }
 .authored-ungraded-session { min-width: 0; }
+.cloze-difficulty-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 150px)); gap: 4px; width: fit-content; padding: 4px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); }
+.cloze-difficulty-tabs button { display: flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; color: var(--color-text-secondary); border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cloze-difficulty-tabs button span { min-width: 20px; padding: 2px 5px; border-radius: 999px; background: var(--color-surface-hover); font-size: 10px; text-align: center; }
+.cloze-difficulty-tabs button.is-active { color: var(--color-primary-hover); background: color-mix(in srgb, var(--color-primary) 13%, transparent); }
+.cloze-question-tools { display: flex; align-items: center; gap: 12px; }
+.cloze-question-tools button { display: inline-flex; min-height: 34px; align-items: center; gap: 7px; padding: 0 11px; color: var(--color-primary-hover); border: 1px solid color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); border-radius: 6px; background: transparent; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.cloze-question-tools button:hover:not(:disabled) { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+.cloze-question-tools button:disabled { opacity: .55; cursor: wait; }
 .authored-answer-key > span { color: var(--color-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .authored-answer-key { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--color-primary); border-radius: 8px; background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)); }
 .authored-answer-key p { margin: 0; white-space: pre-wrap; }
@@ -2428,6 +2436,11 @@ select option[value=""] { color: #7f8b9b; }
     background: rgb(11 14 19 / 96%);
     backdrop-filter: blur(14px);
   }
+
+  .cloze-difficulty-tabs { grid-template-columns: repeat(2, 1fr); width: 100%; }
+  .authored-ungraded-session > header { align-items: stretch; flex-direction: column; gap: 10px; }
+  .cloze-question-tools { justify-content: space-between; }
+  .cloze-question-tools button { min-height: 40px; padding-inline: 13px; }
 
   .authored-ungraded-session .authored-session-action {
     width: 100%;

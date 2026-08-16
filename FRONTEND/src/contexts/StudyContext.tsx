@@ -8,10 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
-import {
-  getCachedStudyStructure,
-  getStudyStructure,
-} from "../services/studyApi";
+import { getCachedStudyStructure } from "../services/studyApi";
+import { loadStructureLocalFirst, synchronizeStructure } from "../services/offlineSync";
 
 import type {
   Discipline,
@@ -23,6 +21,7 @@ interface StudyContextValue {
   disciplines: Discipline[];
   isLoading: boolean;
   isRefreshing: boolean;
+  isOffline: boolean;
   error: string | null;
 
   reloadStructure: () => Promise<void>;
@@ -61,36 +60,50 @@ export function StudyProvider({
     () => getCachedStudyStructure() === null,
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
 
   const [error, setError] = useState<
     string | null
   >(null);
 
   const loadStructure = useCallback(async () => {
-    const hasPreviousData = getCachedStudyStructure() !== null;
+    let hasPreviousData = disciplines.length > 0;
     try {
+      const offlineStructure = await loadStructureLocalFirst();
+      if (offlineStructure?.length) {
+        setDisciplines(offlineStructure);
+        hasPreviousData = true;
+      }
       setIsLoading(!hasPreviousData);
       setIsRefreshing(hasPreviousData);
       setError(null);
-
-      const structure = await getStudyStructure();
-
-      setDisciplines(structure);
+      const structure = await synchronizeStructure();
+      if (structure) setDisciplines(structure);
+      setIsOffline(false);
     } catch (requestError) {
+      setIsOffline(true);
       const message =
         requestError instanceof Error
           ? requestError.message
           : "Erro ao carregar a estrutura de estudos.";
 
-      setError(message);
+      if (!hasPreviousData) setError(message);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [disciplines.length]);
 
   useEffect(() => {
     void loadStructure();
+  }, [loadStructure]);
+
+  useEffect(() => {
+    const online = () => { setIsOffline(false); void loadStructure(); };
+    const offline = () => setIsOffline(true);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
   }, [loadStructure]);
 
   const value = useMemo<StudyContextValue>(
@@ -98,6 +111,7 @@ export function StudyProvider({
       disciplines,
       isLoading,
       isRefreshing,
+      isOffline,
       error,
       reloadStructure: loadStructure,
 
@@ -144,6 +158,7 @@ export function StudyProvider({
       error,
       isLoading,
       isRefreshing,
+      isOffline,
       loadStructure,
     ],
   );

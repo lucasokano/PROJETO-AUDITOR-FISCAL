@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test": "tsc -p tsconfig.tests.json && node --experimental-strip-types --test src/services/tests/offlinePolicy.test.ts",
     "start": "node scripts/serve.mjs",
     "lint": "eslint .",
     "preview": "vite preview"

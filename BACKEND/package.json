@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "npm run prisma:generate && tsc",
-    "test": "node --test dist/modules/exercises/tests/exercise-engine.test.js dist/modules/auth/tests/auth.test.js",
+    "test": "node --test dist/modules/exercises/tests/exercise-engine.test.js dist/modules/auth/tests/auth.test.js dist/modules/authoredQuestions/tests/authored-cloze.test.js",
     "start": "npm run prisma:migrate:deploy && node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

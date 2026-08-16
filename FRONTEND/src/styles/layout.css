@@ -7,6 +7,7 @@ body { background: var(--color-background); }
 .topbar-brand { display: flex; align-items: center; gap: var(--space-3); }
 .topbar-brand-mark { display: grid; width: 30px; height: 30px; place-items: center; border-radius: var(--radius-sm); background: var(--color-primary); color: var(--color-on-primary); font-weight: 800; }
 .topbar-spacer { flex: 1; }
+.offline-content-indicator { padding: 7px var(--space-5); color: var(--color-primary-hover); border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border)); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-background)); font-size: 11px; text-align: center; }
 .theme-picker { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); font-size: .85rem; }
 .theme-picker select { min-width: 130px; }
 .ui-page { display: grid; gap: var(--space-5); }

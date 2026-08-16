@@ -20,7 +20,7 @@ import { RealMultipleChoiceSession, type RealQuestionProgress } from "../compone
 import { AuthoredUngradedSession } from "../components/exercises/AuthoredUngradedSession";
 import { useStudy } from "../contexts/StudyContext";
 import { getCachedExerciseGroups, getExerciseGroups } from "../services/exerciseApi";
-import { getStudyConceptQuestions, getStudyClozeQuestions } from "../services/authoredQuestionApi";
+import { getStudyConceptQuestions } from "../services/authoredQuestionApi";
 import { getStudyExamQuestions } from "../services/examQuestionApi";
 import {
   getSubtopicStatements,
@@ -246,7 +246,6 @@ useEffect(() => {
     void Promise.allSettled([
       getStudyExamQuestions(currentSubtopicId),
       getStudyConceptQuestions(currentSubtopicId),
-      getStudyClozeQuestions(currentSubtopicId),
     ]);
 
     return () => {

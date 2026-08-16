@@ -11,6 +11,7 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [clozeText, setClozeText] = useState("");
+  const [isDifficult, setIsDifficult] = useState(false);
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [mode, setMode] = useState<"single" | "bulk">("single");
@@ -30,8 +31,8 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
         await createConceptQuestion({ subtopicId: Number(subtopicId), question, answer });
         setQuestion(""); setAnswer("");
       } else {
-        await createClozeQuestion({ subtopicId: Number(subtopicId), textWithAnswers: clozeText });
-        setClozeText("");
+        await createClozeQuestion({ subtopicId: Number(subtopicId), textWithAnswers: clozeText, isDifficult });
+        setClozeText(""); setIsDifficult(false);
       }
       setMessage("Questão adicionada com sucesso.");
     } catch (error) {
@@ -92,7 +93,7 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
         {isConceptual ? <>
           <label><span>Pergunta</span><textarea rows={4} value={question} onChange={(event) => setQuestion(event.target.value)} required /></label>
           <label><span>Resposta / gabarito</span><textarea rows={4} value={answer} onChange={(event) => setAnswer(event.target.value)} required /></label>
-        </> : <label><span>Texto com gabarito nas lacunas</span><textarea rows={7} value={clozeText} onChange={(event) => setClozeText(event.target.value)} placeholder="O poder de {{polícia}} limita direitos em benefício do {{interesse público}}." required /></label>}
+        </> : <><label><span>Texto com gabarito nas lacunas</span><textarea rows={7} value={clozeText} onChange={(event) => setClozeText(event.target.value)} placeholder="O poder de {{polícia}} limita direitos em benefício do {{interesse público}}." required /></label><label><span>Dificuldade</span><select value={isDifficult ? "difficult" : "easy"} onChange={(event) => setIsDifficult(event.target.value === "difficult")}><option value="easy">Fácil</option><option value="difficult">Difícil</option></select></label></>}
 
         <button className="admin-submit-button" disabled={isSaving}>{isSaving ? "Adicionando..." : "Adicionar"}</button>
       </form>
