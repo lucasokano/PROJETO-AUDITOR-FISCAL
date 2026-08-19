@@ -3,7 +3,7 @@ import type {
   StudyConceptQuestion, ConceptQuestion, ClozeQuestion, ClozeImportInput, ClozeImportPreviewItem, ClozeImportResult,
 } from "../types/authoredQuestion";
 import { createKeyedCache } from "./questionCache";
-import { invalidateOfflineClozeSubtopic } from "./offlineDb";
+import { invalidateOfflineClozeSubtopic, updateOfflineClozeDifficulty } from "./offlineDb";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 const conceptStudyCache = createKeyedCache<StudyConceptQuestion[]>();
@@ -37,7 +37,7 @@ export const getStudyConceptQuestions = (subtopicId: number) => conceptStudyCach
 export const revealConceptAnswer = (id: number) => request<ConceptAnswerResult>(`/study/conceptual/${id}/reveal`, { method: "POST" });
 export const changeClozeDifficulty = async (id: number, isDifficult: boolean) => {
   const updated = await request<{ id: number; subtopicId: number; isDifficult: boolean }>(`/cloze/${id}/difficulty`, { method: "PATCH", body: JSON.stringify({ isDifficult }) });
-  await invalidateOfflineClozeSubtopic(updated.subtopicId);
+  await updateOfflineClozeDifficulty(updated.id, updated.subtopicId, updated.isDifficult);
   return updated;
 };
 export const getConceptQuestions = () => request<ConceptQuestion[]>("/conceptual");

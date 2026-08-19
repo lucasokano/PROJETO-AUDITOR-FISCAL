@@ -205,6 +205,19 @@ export async function invalidateOfflineClozeSubtopic(subtopicId: number) {
   } finally { database.close(); }
 }
 
+export async function updateOfflineClozeDifficulty(id: number, subtopicId: number, isDifficult: boolean) {
+  const database = await openDatabase();
+  if (!database) return;
+  try {
+    const transaction = database.transaction([QUESTIONS_STORE, METADATA_STORE], "readwrite");
+    const store = transaction.objectStore(QUESTIONS_STORE);
+    const question = await requestResult(store.get(id) as IDBRequest<StudyClozeQuestion | undefined>);
+    if (question) store.put(storedClozeQuestion({ ...question, isDifficult }));
+    transaction.objectStore(METADATA_STORE).delete(`cloze:${subtopicId}`);
+    await transactionDone(transaction);
+  } finally { database.close(); }
+}
+
 export async function clearOfflineContent() {
   const database = await openDatabase();
   if (!database) return;

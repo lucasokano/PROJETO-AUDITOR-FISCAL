@@ -55,7 +55,10 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
       setIsSaving(true); setMessage("");
       const result = await importClozeQuestions({ disciplineId: Number(disciplineId), text: bulkText, createMissing });
       if (createMissing && result.created > 0) await reloadStructure();
-      setPreview(result.items);
+      setPreview(null);
+      setBulkText("");
+      setDisciplineId("");
+      setCreateMissing(false);
       setMessage(`${result.created} questão(ões) importada(s). ${result.failed} registro(s) ignorado(s).`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível importar o lote."); }
     finally { setIsSaving(false); }
@@ -73,7 +76,15 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
 
       {message && <div className="form-message" role="status">{message}</div>}
       {!isConceptual && <div className="structure-tabs authored-import-tabs"><button type="button" className={mode === "single" ? "structure-tab-active" : ""} onClick={() => { setMode("single"); setPreview(null); }}>Questão unitária</button><button type="button" className={mode === "bulk" ? "structure-tab-active" : ""} onClick={() => setMode("bulk")}>Importar TXT</button></div>}
-      {!isConceptual && mode === "bulk" ? <>
+      {!isConceptual && mode === "bulk" ? preview ?
+        <section className="cloze-import-preview">
+          <header><div><span>Preview</span><strong>{preview.filter((item) => item.valid).length} válidas · {preview.filter((item) => !item.valid).length} inválidas</strong></div></header>
+          <div className="cloze-import-table">{preview.map((item) => <article key={`${item.line}-${item.text}`} className={item.valid ? "is-valid" : "is-invalid"}><div><span>Linha {item.line} · {item.topic || "Sem tópico"} / {item.subtopic || "Sem subtópico"}</span><p>{item.text}</p><small>Respostas: {item.answers.length ? item.answers.join(" · ") : "nenhuma"}</small>{(item.willCreateTopic || item.willCreateSubtopic) && <small>Será criada estrutura ausente.</small>}</div><strong>{item.valid ? "Válida" : item.message}</strong></article>)}</div>
+          <footer className="cloze-import-preview-actions">
+            <button type="button" className="admin-submit-button" disabled={isSaving || !preview.some((item) => item.valid)} onClick={() => void confirmImport()}>{isSaving ? "Importando..." : "Confirmar importação"}</button>
+            <button type="button" className="cloze-import-discard" disabled={isSaving} onClick={() => { setPreview(null); setMessage(""); }}>Descartar</button>
+          </footer>
+        </section> :
         <form className="exam-question-form authored-question-form cloze-import-form" onSubmit={generatePreview}>
           <label><span>Disciplina</span><select value={disciplineId} onChange={(event) => { setDisciplineId(event.target.value); setPreview(null); }} required><option value="">Selecione</option>{disciplines.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
           <label><span>Arquivo TXT</span><input type="file" accept=".txt,text/plain" onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.text().then((text) => { setBulkText(text); setPreview(null); }); }} /></label>
@@ -81,8 +92,7 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
           <label className="cloze-import-create"><input type="checkbox" checked={createMissing} onChange={(event) => { setCreateMissing(event.target.checked); setPreview(null); }} /><span>Criar automaticamente tópicos e subtópicos ausentes</span></label>
           <button className="admin-submit-button" disabled={isSaving || !disciplineId || !bulkText.trim()}>{isSaving ? "Analisando..." : "Gerar preview"}</button>
         </form>
-        {preview && <section className="cloze-import-preview"><header><div><span>Preview</span><strong>{preview.filter((item) => item.valid).length} válidas · {preview.filter((item) => !item.valid).length} inválidas</strong></div><button type="button" className="admin-submit-button" disabled={isSaving || !preview.some((item) => item.valid)} onClick={() => void confirmImport()}>Confirmar importação</button></header><div className="cloze-import-table">{preview.map((item) => <article key={`${item.line}-${item.text}`} className={item.valid ? "is-valid" : "is-invalid"}><div><span>Linha {item.line} · {item.topic || "Sem tópico"} / {item.subtopic || "Sem subtópico"}</span><p>{item.text}</p><small>Respostas: {item.answers.length ? item.answers.join(" · ") : "nenhuma"}</small>{(item.willCreateTopic || item.willCreateSubtopic) && <small>Será criada estrutura ausente.</small>}</div><strong>{item.valid ? "Válida" : item.message}</strong></article>)}</div></section>}
-      </> :
+      :
       <form className="exam-question-form authored-question-form" onSubmit={submit}>
         <div className="exam-question-context">
           <label><span>Disciplina</span><select value={disciplineId} onChange={(event) => { setDisciplineId(event.target.value); setTopicId(""); setSubtopicId(""); }} required><option value="">Selecione</option>{disciplines.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>

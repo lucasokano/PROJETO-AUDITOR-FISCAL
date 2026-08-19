@@ -2387,6 +2387,12 @@ select option[value=""] { color: #7f8b9b; }
 .cloze-import-preview > header div { display: grid; gap: 3px; }
 .cloze-import-preview > header span { color: var(--color-primary-hover); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .cloze-import-preview > header strong { color: var(--color-text); font-size: 13px; }
+.cloze-import-preview-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.cloze-import-preview-actions .admin-submit-button { min-height: 42px; margin: 0; padding-inline: 20px; color: var(--color-primary); border: 1px solid var(--color-primary); border-radius: 7px; background: transparent; }
+.cloze-import-preview-actions .admin-submit-button:hover:not(:disabled) { color: var(--color-primary-hover); border-color: var(--color-primary-hover); background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+.cloze-import-discard { min-height: 42px; padding: 0 18px; color: var(--color-danger); border: 1px solid var(--color-danger); border-radius: 7px; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cloze-import-discard:hover:not(:disabled) { color: var(--color-danger); border-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 8%, transparent); }
+.cloze-import-discard:disabled { opacity: .5; cursor: wait; }
 .cloze-import-table { overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; }
 .cloze-import-table article { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 220px); gap: 16px; padding: 12px 14px; border-bottom: 1px solid var(--color-border); background: #1c2026; }
 .cloze-import-table article:last-child { border-bottom: 0; }
@@ -2424,6 +2430,8 @@ select option[value=""] { color: #7f8b9b; }
 
 @media (max-width: 800px) {
   .cloze-import-preview > header { align-items: stretch; flex-direction: column; }
+  .cloze-import-preview-actions { align-items: stretch; flex-direction: column; }
+  .cloze-import-preview-actions > button { width: 100%; }
   .cloze-import-table article { grid-template-columns: 1fr; gap: 6px; }
   .cloze-import-table article > strong { text-align: left; }
   .authored-ungraded-session footer:has(.authored-session-action) {
