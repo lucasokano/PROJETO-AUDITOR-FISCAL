@@ -6,7 +6,6 @@ import {
   Search,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import {
   useCallback,
@@ -38,7 +37,6 @@ import type {
   KnowledgeCategory,
   KnowledgeGroup,
   KnowledgeImportItem,
-  KnowledgeImportReport,
   KnowledgeItem,
   SubtopicKnowledge,
 } from "../types/knowledge";
@@ -57,8 +55,10 @@ type Message = {
   text: string;
 };
 
-interface ImportResult extends KnowledgeImportReport {
-  invalidLines: number[];
+interface KnowledgeImportPreviewItem extends KnowledgeImportItem {
+  category: string;
+  valid: boolean;
+  message: string | null;
 }
 
 const emptyGroupDraft = {
@@ -107,7 +107,7 @@ export function AdminKnowledge() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importGroupId, setImportGroupId] = useState("");
   const [importText, setImportText] = useState("");
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importPreview, setImportPreview] = useState<KnowledgeImportPreviewItem[] | null>(null);
 
   const discipline = disciplines.find(
     (item) => item.id === Number(disciplineId),
@@ -370,50 +370,50 @@ export function AdminKnowledge() {
   function openImport() {
     setImportGroupId(String(selectedGroupId ?? knowledge?.groups[0]?.id ?? ""));
     setImportText("");
-    setImportResult(null);
+    setImportPreview(null);
     setIsImportOpen(true);
   }
 
-  async function handleImport(event: FormEvent) {
+  function generateImportPreview(event: FormEvent) {
     event.preventDefault();
-    const validItems: KnowledgeImportItem[] = [];
-    const invalidLines: number[] = [];
+    const group = knowledge?.groups.find((item) => item.id === Number(importGroupId));
+    let currentCategory = "";
+    let itemLines: string[] = [];
+    let itemStartLine = 0;
+    const items: KnowledgeImportPreviewItem[] = [];
 
-    importText.split(/\r?\n/).forEach((line, index) => {
-      if (!line.trim()) return;
-      const parts = line.split(";").map((part) => part.trim());
-      const text = parts[0] ?? "";
-      const categoryName = parts[1] ?? "";
-
-      if (
-        text.length < 2 ||
-        text.length > 2000 ||
-        categoryName.length < 1 ||
-        categoryName.length > 160 ||
-        parts.length > 3
-      ) {
-        invalidLines.push(index + 1);
-        return;
-      }
-
-      validItems.push({
-        line: index + 1,
-        text,
-        categoryName,
-        reference: parts[2] || null,
-      });
-    });
-
-    if (validItems.length === 0) {
-      setImportResult({
-        created: 0,
-        updated: 0,
-        ignored: 0,
-        missingCategories: [],
-        invalidLines,
-      });
-      return;
+    function finishItem() {
+      if (!itemLines.length) return;
+      const text = itemLines.join("\n").trim();
+      const category = group?.categories.find((item) => item.name.localeCompare(currentCategory, "pt-BR", { sensitivity: "base" }) === 0);
+      const message = !currentCategory
+        ? "Informe [Categoria: ...] antes do item."
+        : !category
+          ? `A categoria “${currentCategory}” não pertence ao grupo selecionado.`
+          : text.length < 2 || text.length > 2000
+            ? "O item deve possuir entre 2 e 2000 caracteres."
+            : null;
+      items.push({ line: itemStartLine, text, category: currentCategory, categoryName: category?.name ?? currentCategory, reference: null, valid: !message, message });
+      itemLines = [];
+      itemStartLine = 0;
     }
+
+    importText.split(/\r?\n/).forEach((rawLine, index) => {
+      const text = rawLine.trim();
+      if (!text) { finishItem(); return; }
+      const header = text.match(/^\[categoria:\s*(.+)]$/i);
+      if (header) { finishItem(); currentCategory = header[1]?.trim() ?? ""; return; }
+      if (!itemLines.length) itemStartLine = index + 1;
+      itemLines.push(text);
+    });
+    finishItem();
+    setMessage(null);
+    setImportPreview(items);
+  }
+
+  async function confirmImport() {
+    const validItems = importPreview?.filter((item) => item.valid).map<KnowledgeImportItem>(({ line, text, categoryName, reference }) => ({ line, text, categoryName, reference })) ?? [];
+    if (!validItems.length) return;
 
     try {
       setIsSaving(true);
@@ -423,14 +423,52 @@ export function AdminKnowledge() {
         groupId: Number(importGroupId),
         items: validItems,
       });
-      setImportResult({ ...result, invalidLines });
       await loadKnowledge();
-      setMessage({ type: "success", text: "Importação processada." });
+      setImportPreview(null);
+      setImportText("");
+      setImportGroupId("");
+      setIsImportOpen(false);
+      setMessage({ type: "success", text: `${result.created} item(ns) criado(s), ${result.updated} atualizado(s) e ${result.ignored} ignorado(s).` });
     } catch (error) {
       setMessage({ type: "error", text: getErrorMessage(error) });
     } finally {
       setIsSaving(false);
     }
+  }
+
+  if (isImportOpen) {
+    const importGroup = knowledge?.groups.find((group) => group.id === Number(importGroupId));
+    const validCount = importPreview?.filter((item) => item.valid).length ?? 0;
+    const invalidCount = (importPreview?.length ?? 0) - validCount;
+    return (
+      <section className="page knowledge-admin-page admin-tool-page knowledge-import-page">
+        <header className="knowledge-admin-heading admin-tool-heading knowledge-import-heading">
+          <div><span>Conhecimento estruturado</span><h2>Importar itens por TXT</h2><p>Escolha o grupo e organize o arquivo com cabeçalhos de categoria.</p></div>
+          <label><span>Grupo de classificação</span><select value={importGroupId} onChange={(event) => { setImportGroupId(event.target.value); setImportPreview(null); }} required><option value="">Selecione</option>{knowledge?.groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
+        </header>
+
+        {message && <div className={`knowledge-message knowledge-message-${message.type}`}>{message.text}</div>}
+
+        {!importPreview ? <>
+          <section className="knowledge-import-context">
+            <div><span>Disciplina</span><strong>{discipline?.name ?? "Não selecionada"}</strong></div>
+            <div><span>Tópico</span><strong>{topic?.name ?? "Não selecionado"}</strong></div>
+            <div><span>Subtópico</span><strong>{selectedSubtopic?.name ?? "Não selecionado"}</strong></div>
+            <div><span>Categorias disponíveis</span><strong>{importGroup?.categories.length ?? 0}</strong></div>
+          </section>
+          <form className="exam-question-form authored-question-form knowledge-txt-import-form" onSubmit={generateImportPreview}>
+            <label><span>Arquivo TXT</span><input type="file" accept=".txt,text/plain" onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.text().then((text) => setImportText(text)); }} /></label>
+            <label><span>Conteúdo</span><textarea rows={16} value={importText} onChange={(event) => setImportText(event.target.value)} placeholder={'[Categoria: Competência privativa]\nLegislar sobre direito civil\n\nLegislar sobre direito penal\n\n[Categoria: Competência comum]\nProteger o meio ambiente'} required /></label>
+            <p className="knowledge-import-hint"><strong>[Categoria: nome]</strong> define a categoria atual. Uma linha em branco separa os itens; linhas consecutivas compõem o mesmo item.</p>
+            <div className="knowledge-import-form-actions"><button type="submit" className="admin-submit-button" disabled={isSaving || !importGroupId || !importText.trim()}>Gerar preview</button><button type="button" className="knowledge-import-back" onClick={() => { setIsImportOpen(false); setImportText(""); setImportPreview(null); }}>Voltar ao conhecimento</button></div>
+          </form>
+        </> : <section className="cloze-import-preview knowledge-txt-preview">
+          <header><div><span>Preview</span><strong>{validCount} válidos · {invalidCount} inválidos</strong></div></header>
+          <div className="cloze-import-table">{importPreview.map((item) => <article key={`${item.line}-${item.text}`} className={item.valid ? "is-valid" : "is-invalid"}><div><span>Linha {item.line} · {item.category || "Sem categoria"}</span><p>{item.text}</p></div><strong>{item.valid ? "Válido" : item.message}</strong></article>)}</div>
+          <footer className="cloze-import-preview-actions"><button type="button" className="admin-submit-button" disabled={isSaving || validCount === 0} onClick={() => void confirmImport()}>{isSaving ? "Importando..." : "Confirmar importação"}</button><button type="button" className="cloze-import-discard" disabled={isSaving} onClick={() => { setImportPreview(null); setMessage(null); }}>Descartar</button></footer>
+        </section>}
+      </section>
+    );
   }
 
   return (
@@ -574,7 +612,7 @@ export function AdminKnowledge() {
               <div><span>Conteúdo</span><h3>Itens de conhecimento</h3></div>
               <div className="knowledge-toolbar-actions">
                 <button type="button" onClick={() => { setItemDraft(emptyItemDraft); setIsItemEditorOpen(true); }}><Plus size={16} /> Novo item</button>
-                <button type="button" className="knowledge-secondary-button" onClick={openImport}><Upload size={16} /> Importar</button>
+                <button type="button" className="knowledge-secondary-button" onClick={openImport}><Upload size={16} /> Importar TXT</button>
                 <label className="knowledge-search"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Pesquisar itens" aria-label="Pesquisar itens" /></label>
               </div>
             </div>
@@ -607,7 +645,6 @@ export function AdminKnowledge() {
         </>
       )}
 
-      {isImportOpen && <div className="knowledge-modal-backdrop" role="presentation"><section className="knowledge-modal" role="dialog" aria-modal="true" aria-labelledby="knowledge-import-title"><header><div><span>Importação em lote</span><h3 id="knowledge-import-title">Importar itens</h3></div><button type="button" title="Fechar" onClick={() => setIsImportOpen(false)}><X size={20} /></button></header>{message?.type === "error" && <div className="knowledge-message knowledge-message-error">{message.text}</div>}<form onSubmit={handleImport}><label><span>Grupo</span><select value={importGroupId} onChange={(event) => setImportGroupId(event.target.value)} required><option value="">Selecione</option>{knowledge?.groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label><label><span>Texto para importação</span><textarea rows={12} value={importText} onChange={(event) => setImportText(event.target.value)} placeholder="Direito penal;Privativa da União;CF art.22 I" required /></label><p className="knowledge-import-hint">Uma linha por item: texto ; categoria ; referência</p><div className="knowledge-form-actions"><button type="submit" disabled={isSaving}>{isSaving ? "Importando..." : "Processar importação"}</button><button type="button" className="knowledge-secondary-button" onClick={() => setIsImportOpen(false)}>Fechar</button></div></form>{importResult && <div className="knowledge-import-report"><h4>Relatório</h4><dl><div><dt>Itens criados</dt><dd>{importResult.created}</dd></div><div><dt>Itens atualizados</dt><dd>{importResult.updated}</dd></div><div><dt>Itens ignorados</dt><dd>{importResult.ignored}</dd></div><div><dt>Categorias inexistentes</dt><dd>{importResult.missingCategories.length}</dd></div><div><dt>Linhas inválidas</dt><dd>{importResult.invalidLines.length}</dd></div></dl>{importResult.missingCategories.length > 0 && <p>Categorias ausentes: {importResult.missingCategories.map((item) => `linha ${item.line} (${item.category})`).join(", ")}</p>}{importResult.invalidLines.length > 0 && <p>Linhas inválidas: {importResult.invalidLines.join(", ")}</p>}</div>}</section></div>}
     </section>
   );
 }

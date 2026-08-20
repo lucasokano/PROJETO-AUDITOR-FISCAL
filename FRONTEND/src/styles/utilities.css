@@ -2393,13 +2393,30 @@ select option[value=""] { color: #7f8b9b; }
 .cloze-import-discard { min-height: 42px; padding: 0 18px; color: var(--color-danger); border: 1px solid var(--color-danger); border-radius: 7px; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .cloze-import-discard:hover:not(:disabled) { color: var(--color-danger); border-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 8%, transparent); }
 .cloze-import-discard:disabled { opacity: .5; cursor: wait; }
+.knowledge-import-page { gap: 18px; }
+.knowledge-import-heading { align-items: flex-end; }
+.knowledge-import-heading > label { display: grid; width: min(320px, 100%); gap: 7px; }
+.knowledge-import-heading > label > span { color: var(--color-text-secondary); font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.knowledge-import-context { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 1100px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); }
+.knowledge-import-context > div { display: grid; min-width: 0; gap: 5px; padding: 13px 15px; border-right: 1px solid var(--color-border); }
+.knowledge-import-context > div:last-child { border-right: 0; }
+.knowledge-import-context span { color: var(--color-text-secondary); font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.knowledge-import-context strong { overflow: hidden; color: var(--color-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.knowledge-txt-import-form { display: grid; gap: 13px; }
+.knowledge-txt-import-form .knowledge-import-hint { margin: 0; padding: 11px 13px; color: var(--color-text-secondary); border-left: 2px solid var(--color-primary); background: color-mix(in srgb, var(--color-primary) 6%, transparent); font-size: 11px; line-height: 1.5; }
+.knowledge-txt-import-form .knowledge-import-hint strong { color: var(--color-primary-hover); }
+.knowledge-import-form-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.knowledge-import-form-actions .admin-submit-button { min-height: 42px; margin: 0; }
+.knowledge-import-back { min-height: 42px; padding: 0 18px; color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: 7px; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.knowledge-import-back:hover { color: var(--color-text); border-color: var(--color-text-secondary); background: var(--color-surface-hover); }
+.knowledge-txt-preview { margin-top: 0; }
 .cloze-import-table { overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; }
 .cloze-import-table article { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, 220px); gap: 16px; padding: 12px 14px; border-bottom: 1px solid var(--color-border); background: #1c2026; }
 .cloze-import-table article:last-child { border-bottom: 0; }
 .cloze-import-table article.is-invalid { border-left: 2px solid #ef4444; }
 .cloze-import-table article.is-valid { border-left: 2px solid #22c55e; }
 .cloze-import-table span, .cloze-import-table small { display: block; color: var(--color-text-secondary); font-size: 10px; }
-.cloze-import-table p { margin: 6px 0; color: var(--color-text); font-size: 13px; line-height: 1.45; }
+.cloze-import-table p { margin: 6px 0; color: var(--color-text); font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
 .cloze-import-table article > strong { align-self: center; color: var(--color-text-secondary); font-size: 11px; text-align: right; }
 .cloze-import-table .is-valid > strong { color: #4ade80; }
 .cloze-import-table .is-invalid > strong { color: #f87171; }
@@ -2432,6 +2449,12 @@ select option[value=""] { color: #7f8b9b; }
   .cloze-import-preview > header { align-items: stretch; flex-direction: column; }
   .cloze-import-preview-actions { align-items: stretch; flex-direction: column; }
   .cloze-import-preview-actions > button { width: 100%; }
+  .knowledge-import-heading { align-items: stretch; }
+  .knowledge-import-context { grid-template-columns: 1fr 1fr; }
+  .knowledge-import-context > div:nth-child(2) { border-right: 0; }
+  .knowledge-import-context > div:nth-child(-n + 2) { border-bottom: 1px solid var(--color-border); }
+  .knowledge-import-form-actions { align-items: stretch; flex-direction: column; }
+  .knowledge-import-form-actions > button { width: 100%; }
   .cloze-import-table article { grid-template-columns: 1fr; gap: 6px; }
   .cloze-import-table article > strong { text-align: left; }
   .authored-ungraded-session footer:has(.authored-session-action) {
