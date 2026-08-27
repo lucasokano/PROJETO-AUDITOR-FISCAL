@@ -5,15 +5,15 @@ import {
   FileText,
   Folder,
   Pencil,
+  GripVertical,
   Save,
   Trash2,
   X,
-  ArrowUp,
-  ArrowDown,
 } from "lucide-react";
 
 import {
   useState,
+  type DragEvent,
   type FormEvent,
 } from "react";
 
@@ -39,6 +39,16 @@ interface EditingItem {
   type: ItemType;
   id: number;
   name: string;
+}
+
+interface DragItem {
+  kind: "topic" | "subtopic";
+  parentId: number;
+  id: number;
+}
+
+interface DragTarget extends DragItem {
+  position: "before" | "after";
 }
 
 interface Props {
@@ -69,6 +79,12 @@ export function StudyStructureManager({
 
   const [isSaving, setIsSaving] =
     useState(false);
+
+  const [dragItem, setDragItem] =
+    useState<DragItem | null>(null);
+
+  const [dragTarget, setDragTarget] =
+    useState<DragTarget | null>(null);
 
   function toggleSet(
     setter: React.Dispatch<
@@ -208,17 +224,11 @@ export function StudyStructureManager({
     }
   }
 
-  async function moveItem(
+  async function persistOrder(
     kind: "topic" | "subtopic",
     parentId: number,
-    ids: number[],
-    index: number,
-    direction: -1 | 1,
+    ordered: number[],
   ) {
-    const target = index + direction;
-    if (target < 0 || target >= ids.length) return;
-    const ordered = [...ids];
-    [ordered[index], ordered[target]] = [ordered[target]!, ordered[index]!];
     try {
       setIsSaving(true);
       if (kind === "topic") await reorderTopics(parentId, ordered);
@@ -228,6 +238,85 @@ export function StudyStructureManager({
     } catch (error) {
       onMessage("error", error instanceof Error ? error.message : "Não foi possível alterar a sequência.");
     } finally { setIsSaving(false); }
+  }
+
+  function handleDragStart(
+    event: DragEvent<HTMLDivElement>,
+    item: DragItem,
+  ) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(item.id));
+    setDragItem(item);
+    setDragTarget(null);
+  }
+
+  function handleDragOver(
+    event: DragEvent<HTMLDivElement>,
+    target: DragItem,
+  ) {
+    if (
+      !dragItem ||
+      dragItem.kind !== target.kind ||
+      dragItem.parentId !== target.parentId ||
+      dragItem.id === target.id
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const position = event.clientY < bounds.top + bounds.height / 2
+      ? "before"
+      : "after";
+    setDragTarget({ ...target, position });
+  }
+
+  function handleDrop(
+    event: DragEvent<HTMLDivElement>,
+    target: DragItem,
+    ids: number[],
+  ) {
+    event.preventDefault();
+
+    if (
+      !dragItem ||
+      dragItem.kind !== target.kind ||
+      dragItem.parentId !== target.parentId ||
+      dragItem.id === target.id
+    ) {
+      setDragItem(null);
+      setDragTarget(null);
+      return;
+    }
+
+    const position = dragTarget?.id === target.id
+      ? dragTarget.position
+      : "before";
+    const ordered = ids.filter((id) => id !== dragItem.id);
+    const targetIndex = ordered.indexOf(target.id);
+    ordered.splice(targetIndex + (position === "after" ? 1 : 0), 0, dragItem.id);
+
+    const { kind, parentId } = dragItem;
+    setDragItem(null);
+    setDragTarget(null);
+    void persistOrder(kind, parentId, ordered);
+  }
+
+  function handleDragEnd() {
+    setDragItem(null);
+    setDragTarget(null);
+  }
+
+  function dragClassName(item: DragItem) {
+    const classes = [];
+    if (dragItem?.kind === item.kind && dragItem.parentId === item.parentId && dragItem.id === item.id) {
+      classes.push("is-dragging");
+    }
+    if (dragTarget?.kind === item.kind && dragTarget.parentId === item.parentId && dragTarget.id === item.id) {
+      classes.push(`is-drag-target-${dragTarget.position}`);
+    }
+    return classes.join(" ");
   }
 
   function renderEditingRow(
@@ -412,7 +501,7 @@ export function StudyStructureManager({
                 {disciplineOpen && (
                   <div className="structure-children">
                     {discipline.topics.map(
-                      (topic, topicIndex) => {
+                      (topic) => {
                         const topicOpen =
                           openTopics.has(
                             topic.id,
@@ -433,7 +522,15 @@ export function StudyStructureManager({
                                 1,
                               )
                             ) : (
-                              <div className="structure-tree-row structure-tree-level-1">
+                              <div
+                                className={`structure-tree-row structure-tree-level-1 ${dragClassName({ kind: "topic", parentId: discipline.id, id: topic.id })}`}
+                                draggable={!isSaving}
+                                onDragStart={(event) => handleDragStart(event, { kind: "topic", parentId: discipline.id, id: topic.id })}
+                                onDragOver={(event) => handleDragOver(event, { kind: "topic", parentId: discipline.id, id: topic.id })}
+                                onDrop={(event) => handleDrop(event, { kind: "topic", parentId: discipline.id, id: topic.id }, discipline.topics.map((item) => item.id))}
+                                onDragEnd={handleDragEnd}
+                              >
+                                <span className="structure-drag-handle" title="Arraste para reordenar o tópico" aria-hidden="true"><GripVertical size={16} /></span>
                                 <button
                                   type="button"
                                   className="structure-expand-button"
@@ -476,8 +573,6 @@ export function StudyStructureManager({
                                 </div>
 
                                 <div className="structure-tree-actions">
-                                  <button type="button" className="structure-icon-button" title="Mover tópico para cima" disabled={topicIndex === 0 || isSaving} onClick={() => void moveItem("topic", discipline.id, discipline.topics.map((item) => item.id), topicIndex, -1)}><ArrowUp size={15} /></button>
-                                  <button type="button" className="structure-icon-button" title="Mover tópico para baixo" disabled={topicIndex === discipline.topics.length - 1 || isSaving} onClick={() => void moveItem("topic", discipline.id, discipline.topics.map((item) => item.id), topicIndex, 1)}><ArrowDown size={15} /></button>
                                   <button
                                     type="button"
                                     className="structure-icon-button"
@@ -527,7 +622,6 @@ export function StudyStructureManager({
                                 {topic.subtopics.map(
                                   (
                                     subtopic,
-                                    subtopicIndex,
                                   ) => {
                                     const editingSubtopic =
                                       editing?.type ===
@@ -552,8 +646,14 @@ export function StudyStructureManager({
                                         key={
                                           subtopic.id
                                         }
-                                        className="structure-tree-row structure-tree-level-2"
+                                        className={`structure-tree-row structure-tree-level-2 ${dragClassName({ kind: "subtopic", parentId: topic.id, id: subtopic.id })}`}
+                                        draggable={!isSaving}
+                                        onDragStart={(event) => handleDragStart(event, { kind: "subtopic", parentId: topic.id, id: subtopic.id })}
+                                        onDragOver={(event) => handleDragOver(event, { kind: "subtopic", parentId: topic.id, id: subtopic.id })}
+                                        onDrop={(event) => handleDrop(event, { kind: "subtopic", parentId: topic.id, id: subtopic.id }, topic.subtopics.map((item) => item.id))}
+                                        onDragEnd={handleDragEnd}
                                       >
+                                        <span className="structure-drag-handle" title="Arraste para reordenar o subtópico" aria-hidden="true"><GripVertical size={16} /></span>
                                         <span className="structure-leaf-spacer" />
 
                                         <FileText
@@ -576,8 +676,6 @@ export function StudyStructureManager({
                                         </div>
 
                                         <div className="structure-tree-actions">
-                                          <button type="button" className="structure-icon-button" title="Mover subtópico para cima" disabled={subtopicIndex === 0 || isSaving} onClick={() => void moveItem("subtopic", topic.id, topic.subtopics.map((item) => item.id), subtopicIndex, -1)}><ArrowUp size={15} /></button>
-                                          <button type="button" className="structure-icon-button" title="Mover subtópico para baixo" disabled={subtopicIndex === topic.subtopics.length - 1 || isSaving} onClick={() => void moveItem("subtopic", topic.id, topic.subtopics.map((item) => item.id), subtopicIndex, 1)}><ArrowDown size={15} /></button>
                                           <button
                                             type="button"
                                             className="structure-icon-button"

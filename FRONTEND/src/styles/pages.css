@@ -1638,6 +1638,7 @@ textarea {
 }
 
 .structure-tree-row {
+  position: relative;
   display: flex;
   align-items: center;
   min-height: 52px;
@@ -1645,6 +1646,42 @@ textarea {
   background: #242931;
   border: 1px solid #323945;
   border-radius: 8px;
+}
+
+.structure-tree-row[draggable="true"] {
+  transition: opacity 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.structure-tree-row.is-dragging {
+  opacity: 0.42;
+}
+
+.structure-tree-row.is-drag-target-before {
+  box-shadow: inset 0 2px 0 var(--color-primary);
+}
+
+.structure-tree-row.is-drag-target-after {
+  box-shadow: inset 0 -2px 0 var(--color-primary);
+}
+
+.structure-drag-handle {
+  display: flex;
+  width: 24px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #687384;
+  cursor: grab;
+  touch-action: none;
+}
+
+.structure-drag-handle:hover {
+  color: var(--color-primary);
+}
+
+.structure-tree-row.is-dragging .structure-drag-handle {
+  cursor: grabbing;
 }
 
 .structure-tree-level-1 {
