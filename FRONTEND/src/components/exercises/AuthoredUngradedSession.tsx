@@ -199,18 +199,20 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
       {difficultyTabs}
       <header>
         <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
-        {isCloze && <div className="cloze-question-tools"><button type="button" className="desktop-cloze-move" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button></div>}
       </header>
       <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}><span>{prompt}</span></p>
       {error && <div className="form-message form-error">{error}</div>}
       {result && !isCloze && <div className="authored-answer-key"><span>Gabarito</span><p>{result.answer}</p></div>}
       <footer>
         {result || isClozeRevealed ? (
-          <button type="button" className="authored-session-action authored-next-button" disabled={isLoadingMore} onClick={() => void next()}>{currentIndex + 1 === (kind === "cloze" ? activeTotal : visibleQuestions.length) ? "Concluir" : "Próximo"}</button>
+          <div className="authored-completed-actions">
+            {isCloze && <button type="button" className="cloze-move-button" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button>}
+            <button type="button" className="authored-session-action authored-next-button" disabled={isLoadingMore || isSubmitting} onClick={() => void next()}>{currentIndex + 1 === (kind === "cloze" ? activeTotal : visibleQuestions.length) ? "Concluir" : "Próximo"}</button>
+          </div>
         ) : (
-          <><button type="button" className="authored-session-action authored-reveal-button" disabled={isSubmitting} onClick={() => void reveal()} aria-label={isSubmitting ? "Carregando gabarito" : "Mostrar gabarito"} title="Mostrar gabarito">
+          <button type="button" className="authored-session-action authored-reveal-button" disabled={isSubmitting} onClick={() => void reveal()} aria-label={isSubmitting ? "Carregando gabarito" : "Mostrar gabarito"} title="Mostrar gabarito">
             <Eye size={18} aria-hidden="true" />
-          </button>{isCloze && <button type="button" className="mobile-cloze-move" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button>}</>
+          </button>
         )}
       </footer>
     </section>

@@ -2425,11 +2425,12 @@ select option[value=""] { color: #7f8b9b; }
 .cloze-difficulty-tabs button { display: flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; color: var(--color-text-secondary); border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .cloze-difficulty-tabs button span { min-width: 20px; padding: 2px 5px; border-radius: 999px; background: var(--color-surface-hover); font-size: 10px; text-align: center; }
 .cloze-difficulty-tabs button.is-active { color: var(--color-primary-hover); background: color-mix(in srgb, var(--color-primary) 13%, transparent); }
-.cloze-question-tools { display: flex; align-items: center; gap: 12px; }
-.cloze-question-tools button { display: inline-flex; min-height: 34px; align-items: center; gap: 7px; padding: 0 11px; color: var(--color-primary-hover); border: 1px solid color-mix(in srgb, var(--color-primary) 55%, var(--color-border)); border-radius: 6px; background: transparent; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
-.cloze-question-tools button:hover:not(:disabled) { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
-.cloze-question-tools button:disabled { opacity: .55; cursor: wait; }
-.mobile-cloze-move { display: none; }
+.authored-completed-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.authored-completed-actions:has(.cloze-move-button) { display: grid; width: min(100%, 430px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.authored-completed-actions:has(.cloze-move-button) > button { width: 100%; height: 46px; }
+.cloze-move-button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: 7px; background: transparent; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.cloze-move-button:hover:not(:disabled) { color: var(--color-primary-hover); border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+.cloze-move-button:disabled { opacity: .55; cursor: wait; }
 .authored-answer-key > span { color: var(--color-text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .authored-answer-key { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--color-primary); border-radius: 8px; background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface)); }
 .authored-answer-key p { margin: 0; white-space: pre-wrap; }
@@ -2472,14 +2473,11 @@ select option[value=""] { color: #7f8b9b; }
   .cloze-difficulty-tabs { grid-template-columns: repeat(2, 1fr); width: 100%; }
   .authored-ungraded-session > .cloze-difficulty-tabs { display: none; }
   .authored-ungraded-session > header { align-items: stretch; flex-direction: column; gap: 10px; }
-  .cloze-question-tools { display: none; }
-  .cloze-question-tools button { min-height: 40px; padding-inline: 13px; }
-
   .authored-ungraded-session .real-question-text { display: flex; width: 100%; max-width: 680px; min-height: 42vh; align-items: center; margin: 0 auto; padding: 24px 18px; box-sizing: border-box; color: var(--color-text); font-size: clamp(17px, 4.6vw, 21px); font-weight: 500; line-height: 1.65; overflow-wrap: anywhere; text-align: left; white-space: pre-wrap; }
   .authored-ungraded-session .real-question-text > span { display: inline; width: 100%; }
-  .authored-ungraded-session footer:has(.mobile-cloze-move) { display: flex; flex-direction: column; }
-  .authored-ungraded-session .mobile-cloze-move { display: inline-flex; width: 100%; min-height: 44px; align-items: center; justify-content: center; gap: 7px; color: var(--color-text-secondary); border: 0; border-top: 1px solid var(--color-border); background: #15191f; font: inherit; font-size: 11px; font-weight: 650; }
-  .authored-ungraded-session .mobile-cloze-move:disabled { opacity: .5; }
+  .authored-ungraded-session .authored-completed-actions { display: flex; width: 100%; flex-direction: column-reverse; gap: 0; }
+  .authored-ungraded-session .authored-completed-actions > button { width: 100%; height: 86px; }
+  .authored-ungraded-session .cloze-move-button { min-height: 86px; border: 0; border-top: 1px solid var(--color-border); border-radius: 0; background: #15191f; }
 
   .authored-ungraded-session .authored-session-action {
     width: 100%;
