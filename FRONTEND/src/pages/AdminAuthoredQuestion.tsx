@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useStudy } from "../contexts/StudyContext";
 import { createClozeQuestion, createConceptQuestion, importClozeQuestions, previewClozeImport } from "../services/authoredQuestionApi";
+import { createClozeImportBatches } from "../services/clozeImportBatch";
 import type { AuthoredQuestionKind, ClozeImportPreviewItem } from "../types/authoredQuestion";
 
 export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) {
@@ -18,6 +19,9 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
   const [bulkText, setBulkText] = useState("");
   const [createMissing, setCreateMissing] = useState(false);
   const [preview, setPreview] = useState<ClozeImportPreviewItem[] | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const [importResumeIndex, setImportResumeIndex] = useState(0);
+  const [importedTotals, setImportedTotals] = useState({ created: 0, failed: 0 });
 
   const discipline = disciplines.find((item) => item.id === Number(disciplineId));
   const topic = discipline?.topics.find((item) => item.id === Number(topicId));
@@ -44,24 +48,49 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
     event.preventDefault();
     try {
       setIsSaving(true); setMessage("");
-      const result = await previewClozeImport({ disciplineId: Number(disciplineId), text: bulkText, createMissing });
-      setPreview(result.items);
+      const batches = createClozeImportBatches(bulkText);
+      const items: ClozeImportPreviewItem[] = [];
+      for (let index = 0; index < batches.length; index += 1) {
+        const batch = batches[index]!;
+        setBatchProgress({ current: index + 1, total: batches.length });
+        const result = await previewClozeImport({ disciplineId: Number(disciplineId), text: batch.text, createMissing });
+        items.push(...result.items.map((item, itemIndex) => ({ ...item, line: batch.sourceLines[itemIndex] ?? item.line })));
+      }
+      setImportResumeIndex(0);
+      setImportedTotals({ created: 0, failed: 0 });
+      setPreview(items);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível analisar o arquivo."); }
-    finally { setIsSaving(false); }
+    finally { setIsSaving(false); setBatchProgress(null); }
   }
 
   async function confirmImport() {
     try {
       setIsSaving(true); setMessage("");
-      const result = await importClozeQuestions({ disciplineId: Number(disciplineId), text: bulkText, createMissing });
-      if (createMissing && result.created > 0) await reloadStructure();
+      const batches = createClozeImportBatches(bulkText);
+      let created = importedTotals.created;
+      let failed = importedTotals.failed;
+      for (let index = importResumeIndex; index < batches.length; index += 1) {
+        setBatchProgress({ current: index + 1, total: batches.length });
+        try {
+          const result = await importClozeQuestions({ disciplineId: Number(disciplineId), text: batches[index]!.text, createMissing });
+          created += result.created;
+          failed += result.failed;
+          setImportedTotals({ created, failed });
+          setImportResumeIndex(index + 1);
+        } catch (error) {
+          throw new Error(`Falha no lote ${index + 1} de ${batches.length}. ${created} questão(ões) já foram importadas. Tente novamente para continuar. ${error instanceof Error ? error.message : ""}`.trim());
+        }
+      }
+      if (createMissing && created > 0) await reloadStructure();
       setPreview(null);
       setBulkText("");
       setDisciplineId("");
       setCreateMissing(false);
-      setMessage(`${result.created} questão(ões) importada(s). ${result.failed} registro(s) ignorado(s).`);
+      setImportResumeIndex(0);
+      setImportedTotals({ created: 0, failed: 0 });
+      setMessage(`${created} questão(ões) importada(s). ${failed} registro(s) ignorado(s).`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível importar o lote."); }
-    finally { setIsSaving(false); }
+    finally { setIsSaving(false); setBatchProgress(null); }
   }
 
   return (
@@ -81,8 +110,8 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
           <header><div><span>Preview</span><strong>{preview.filter((item) => item.valid).length} válidas · {preview.filter((item) => !item.valid).length} inválidas</strong></div></header>
           <div className="cloze-import-table">{preview.map((item) => <article key={`${item.line}-${item.text}`} className={item.valid ? "is-valid" : "is-invalid"}><div><span>Linha {item.line} · {item.topic || "Sem tópico"} / {item.subtopic || "Sem subtópico"}</span><p>{item.text}</p><small>Respostas: {item.answers.length ? item.answers.join(" · ") : "nenhuma"}</small>{(item.willCreateTopic || item.willCreateSubtopic) && <small>Será criada estrutura ausente.</small>}</div><strong>{item.valid ? "Válida" : item.message}</strong></article>)}</div>
           <footer className="cloze-import-preview-actions">
-            <button type="button" className="admin-submit-button" disabled={isSaving || !preview.some((item) => item.valid)} onClick={() => void confirmImport()}>{isSaving ? "Importando..." : "Confirmar importação"}</button>
-            <button type="button" className="cloze-import-discard" disabled={isSaving} onClick={() => { setPreview(null); setMessage(""); }}>Descartar</button>
+            <button type="button" className="admin-submit-button" disabled={isSaving || !preview.some((item) => item.valid)} onClick={() => void confirmImport()}>{isSaving && batchProgress ? `Importando lote ${batchProgress.current}/${batchProgress.total}` : importResumeIndex > 0 ? "Continuar importação" : "Confirmar importação"}</button>
+            <button type="button" className="cloze-import-discard" disabled={isSaving} onClick={() => { setPreview(null); setMessage(""); setImportResumeIndex(0); setImportedTotals({ created: 0, failed: 0 }); }}>Descartar</button>
           </footer>
         </section> :
         <form className="exam-question-form authored-question-form cloze-import-form" onSubmit={generatePreview}>
@@ -90,7 +119,7 @@ export function AdminAuthoredQuestion({ kind }: { kind: AuthoredQuestionKind }) 
           <label><span>Arquivo TXT</span><input type="file" accept=".txt,text/plain" onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.text().then((text) => { setBulkText(text); setPreview(null); }); }} /></label>
           <label><span>Conteúdo</span><textarea rows={12} value={bulkText} onChange={(event) => { setBulkText(event.target.value); setPreview(null); }} placeholder={'[Tópico: Poder Legislativo]\n[Subtópico: Câmara dos Deputados]\nA Câmara é eleita pelo sistema {{proporcional}}.'} required /></label>
           <label className="cloze-import-create"><input type="checkbox" checked={createMissing} onChange={(event) => { setCreateMissing(event.target.checked); setPreview(null); }} /><span>Criar automaticamente tópicos e subtópicos ausentes</span></label>
-          <button className="admin-submit-button" disabled={isSaving || !disciplineId || !bulkText.trim()}>{isSaving ? "Analisando..." : "Gerar preview"}</button>
+          <button className="admin-submit-button" disabled={isSaving || !disciplineId || !bulkText.trim()}>{isSaving && batchProgress ? `Analisando lote ${batchProgress.current}/${batchProgress.total}` : "Gerar preview"}</button>
         </form>
       :
       <form className="exam-question-form authored-question-form" onSubmit={submit}>
