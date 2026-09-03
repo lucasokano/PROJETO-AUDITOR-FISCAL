@@ -200,38 +200,68 @@ export function createDiscipline(
 export function createTopic(
   data: CreateTopicData,
 ) {
-  return prisma.topic.create({
-    data: {
-      disciplineId: data.disciplineId,
-      name: data.name,
-      slug: data.slug,
-      displayOrder: 0,
-    },
-    select: {
-      id: true,
-      disciplineId: true,
-      name: true,
-      slug: true,
-    },
+  return prisma.$transaction(async (transaction) => {
+    const lastTopic = await transaction.topic.findFirst({
+      where: {
+        disciplineId: data.disciplineId,
+      },
+      orderBy: [
+        { displayOrder: "desc" },
+        { id: "desc" },
+      ],
+      select: {
+        displayOrder: true,
+      },
+    });
+
+    return transaction.topic.create({
+      data: {
+        disciplineId: data.disciplineId,
+        name: data.name,
+        slug: data.slug,
+        displayOrder: (lastTopic?.displayOrder ?? -1) + 1,
+      },
+      select: {
+        id: true,
+        disciplineId: true,
+        name: true,
+        slug: true,
+      },
+    });
   });
 }
 
 export function createSubtopic(
   data: CreateSubtopicData,
 ) {
-  return prisma.subtopic.create({
-    data: {
-      topicId: data.topicId,
-      name: data.name,
-      slug: data.slug,
-      displayOrder: 0,
-    },
-    select: {
-      id: true,
-      topicId: true,
-      name: true,
-      slug: true,
-    },
+  return prisma.$transaction(async (transaction) => {
+    const lastSubtopic = await transaction.subtopic.findFirst({
+      where: {
+        topicId: data.topicId,
+      },
+      orderBy: [
+        { displayOrder: "desc" },
+        { id: "desc" },
+      ],
+      select: {
+        displayOrder: true,
+      },
+    });
+
+    return transaction.subtopic.create({
+      data: {
+        topicId: data.topicId,
+        name: data.name,
+        slug: data.slug,
+        displayOrder: (lastSubtopic?.displayOrder ?? -1) + 1,
+      },
+      select: {
+        id: true,
+        topicId: true,
+        name: true,
+        slug: true,
+      },
+    });
   });
 }
 
