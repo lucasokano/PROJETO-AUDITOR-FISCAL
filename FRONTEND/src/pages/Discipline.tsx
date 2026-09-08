@@ -143,7 +143,6 @@ export function Discipline() {
   }, []);
   const [completedExerciseMode, setCompletedExerciseMode] = useState<FiniteExerciseMode | null>(null);
   const [nextContent, setNextContent] = useState<NextContent | null>(null);
-  const [isFindingNextContent, setIsFindingNextContent] = useState(false);
 
   const answerInFlightRef = useRef(false);
   const activeSubtopicIdRef = useRef<
@@ -341,47 +340,38 @@ useEffect(() => {
   useEffect(() => {
     if (!completedMode || !discipline || !topic || !subtopic) {
       setNextContent(null);
-      setIsFindingNextContent(false);
       return;
     }
 
     const topicIndex = discipline.topics.findIndex((item) => item.id === topic.id);
     const subtopicIndex = topic.subtopics.findIndex((item) => item.id === subtopic.id);
-    const candidates = discipline.topics.slice(topicIndex).flatMap((candidateTopic, relativeTopicIndex) => {
-      const start = relativeTopicIndex === 0 ? subtopicIndex + 1 : 0;
-      return candidateTopic.subtopics.slice(start).map((candidateSubtopic) => ({ topic: candidateTopic, subtopic: candidateSubtopic }));
-    });
-    let cancelled = false;
-    setNextContent(null);
-    setIsFindingNextContent(true);
+    const nextSubtopic = topic.subtopics[subtopicIndex + 1];
+    const nextTopic = nextSubtopic ? null : discipline.topics[topicIndex + 1];
+    const targetSubtopic = nextSubtopic ?? nextTopic?.subtopics[0];
+    const params = completedMode === "true-false"
+      ? ""
+      : `?${new URLSearchParams({
+          exercise: completedMode,
+          ...(completedMode === "cloze" ? { difficulty: requestedClozeDifficulty } : {}),
+        })}`;
 
-    void (async () => {
-      for (const candidate of candidates) {
-        const availability = await getSubtopicQuestionTypes(candidate.subtopic.id);
-        const isAvailable = completedMode === "true-false" ? availability.trueFalse > 0
-          : completedMode === "exam" ? availability.exam > 0
-          : completedMode === "conceptual" ? availability.conceptual > 0
-          : availability.cloze > 0;
-        if (!isAvailable) continue;
-
-        const params = completedMode === "true-false"
-          ? ""
-          : `?${new URLSearchParams({
-              exercise: completedMode,
-              ...(completedMode === "cloze" ? { difficulty: requestedClozeDifficulty } : {}),
-            })}`;
-        if (!cancelled) {
-          setNextContent({
-            kind: candidate.topic.id === topic.id ? "subtopic" : "topic",
-            name: candidate.topic.id === topic.id ? candidate.subtopic.name : candidate.topic.name,
-            path: `/disciplina/${discipline.slug}/topico/${candidate.topic.slug}/subtopico/${candidate.subtopic.slug}${params}`,
-          });
-        }
-        return;
-      }
-    })().catch(() => undefined).finally(() => { if (!cancelled) setIsFindingNextContent(false); });
-
-    return () => { cancelled = true; };
+    if (nextSubtopic) {
+      setNextContent({
+        kind: "subtopic",
+        name: nextSubtopic.name,
+        path: `/disciplina/${discipline.slug}/topico/${topic.slug}/subtopico/${nextSubtopic.slug}${params}`,
+      });
+    } else if (nextTopic) {
+      setNextContent({
+        kind: "topic",
+        name: nextTopic.name,
+        path: targetSubtopic
+          ? `/disciplina/${discipline.slug}/topico/${nextTopic.slug}/subtopico/${targetSubtopic.slug}${params}`
+          : `/disciplina/${discipline.slug}/topico/${nextTopic.slug}${params}`,
+      });
+    } else {
+      setNextContent(null);
+    }
   }, [completedMode, discipline, requestedClozeDifficulty, subtopic, topic]);
 
   const correct = answers.filter(
@@ -508,14 +498,12 @@ useEffect(() => {
 
   const completionPanel = completedMode && (
     <div className="statements-finished type-session-finished">
-      <h3>{nextContent?.kind === "topic" ? "Tópico concluído" : nextContent ? "Subtópico concluído" : isFindingNextContent ? "Subtópico concluído" : "Conteúdo concluído"}</h3>
-      <p>{isFindingNextContent
-        ? "Buscando o próximo conteúdo deste mesmo tipo..."
-        : nextContent?.kind === "subtopic"
+      <h3>{nextContent?.kind === "topic" ? "Tópico concluído" : nextContent ? "Subtópico concluído" : "Conteúdo concluído"}</h3>
+      <p>{nextContent?.kind === "subtopic"
           ? `Deseja continuar este tipo de questão no subtópico “${nextContent.name}”?`
           : nextContent?.kind === "topic"
             ? `Você terminou este tipo de questão no tópico atual. Deseja passar para “${nextContent.name}”?`
-            : "Não há outro subtópico com questões deste tipo nesta disciplina."}</p>
+            : "Não há outro subtópico nesta disciplina."}</p>
       <div className="statements-finished-actions">
         {nextContent && <button type="button" className="statements-continue-button" onClick={() => navigate(nextContent.path)}>{nextContent.kind === "subtopic" ? "Próximo subtópico" : "Próximo tópico"}</button>}
         <button type="button" className="restart-button statements-finished-restart" onClick={restartCompletedType}>Responder novamente</button>
