@@ -2425,6 +2425,21 @@ select option[value=""] { color: #7f8b9b; }
 .cloze-difficulty-tabs button { display: flex; min-height: 36px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; color: var(--color-text-secondary); border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .cloze-difficulty-tabs button span { min-width: 20px; padding: 2px 5px; border-radius: 999px; background: var(--color-surface-hover); font-size: 10px; text-align: center; }
 .cloze-difficulty-tabs button.is-active { color: var(--color-primary-hover); background: color-mix(in srgb, var(--color-primary) 13%, transparent); }
+.cloze-inline-edit-trigger { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: 6px; background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.cloze-inline-edit-trigger:hover:not(:disabled) { color: var(--color-primary-hover); border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 7%, transparent); }
+.cloze-inline-edit-trigger:disabled { opacity: .5; cursor: wait; }
+.cloze-inline-editor { display: grid; gap: 10px; padding: 18px 14px; }
+.cloze-inline-editor label { display: grid; gap: 7px; }
+.cloze-inline-editor label > span { color: var(--color-text-secondary); font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.cloze-inline-editor textarea { width: 100%; min-height: 180px; resize: vertical; }
+.cloze-inline-editor > small { color: var(--color-text-secondary); font-size: 10px; }
+.cloze-inline-editor > div { display: flex; justify-content: flex-end; gap: 8px; }
+.cloze-inline-save, .cloze-inline-cancel { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border-radius: 7px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.cloze-inline-save { color: var(--color-on-primary); border: 1px solid transparent; background: var(--color-primary); }
+.cloze-inline-save:hover:not(:disabled) { background: var(--color-primary-hover); }
+.cloze-inline-cancel { color: var(--color-text-secondary); border: 1px solid var(--color-border); background: transparent; }
+.cloze-inline-cancel:hover:not(:disabled) { color: var(--color-text); background: var(--color-surface-hover); }
+.cloze-inline-save:disabled, .cloze-inline-cancel:disabled { opacity: .5; cursor: wait; }
 .authored-completed-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .authored-completed-actions:has(.cloze-move-button) { display: grid; width: min(100%, 430px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .authored-completed-actions:has(.cloze-move-button) > button { width: 100%; height: 46px; }
@@ -2473,6 +2488,10 @@ select option[value=""] { color: #7f8b9b; }
   .cloze-difficulty-tabs { grid-template-columns: repeat(2, 1fr); width: 100%; }
   .authored-ungraded-session > .cloze-difficulty-tabs { display: none; }
   .authored-ungraded-session > header { align-items: stretch; flex-direction: column; gap: 10px; }
+  .authored-ungraded-session .cloze-inline-edit-trigger { width: 100%; min-height: 40px; }
+  .authored-ungraded-session .cloze-inline-editor { padding: 16px; }
+  .authored-ungraded-session .cloze-inline-editor > div { align-items: stretch; flex-direction: column; }
+  .authored-ungraded-session .cloze-inline-editor > div > button { width: 100%; min-height: 48px; }
   .authored-ungraded-session .real-question-text { display: flex; width: 100%; max-width: 680px; min-height: 42vh; align-items: center; margin: 0 auto; padding: 24px 18px; box-sizing: border-box; color: var(--color-text); font-size: clamp(17px, 4.6vw, 21px); font-weight: 500; line-height: 1.65; overflow-wrap: anywhere; text-align: left; white-space: pre-wrap; }
   .authored-ungraded-session .real-question-text > span { display: inline; width: 100%; }
   .authored-ungraded-session .authored-completed-actions { display: flex; width: 100%; flex-direction: column-reverse; gap: 0; }

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeftRight, Eye } from "lucide-react";
+import { ArrowLeftRight, Eye, Pencil, Save, X } from "lucide-react";
 import {
   changeClozeDifficulty, getCachedStudyConceptQuestions,
-  getStudyConceptQuestions, revealConceptAnswer,
+  getClozeQuestion, getStudyConceptQuestions, revealConceptAnswer, updateClozeQuestion,
 } from "../../services/authoredQuestionApi";
 import { loadMoreOfflineClozeQuestions, loadOfflineClozeSession, synchronizeClozeSubtopic } from "../../services/offlineSync";
 import type {
@@ -47,10 +47,12 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingMoreRef = useRef(false);
   const [error, setError] = useState("");
+  const [isEditingCloze, setIsEditingCloze] = useState(false);
+  const [clozeEditText, setClozeEditText] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    setCurrentIndex(0); setResult(null); setIsClozeRevealed(false); setError("");
+    setCurrentIndex(0); setResult(null); setIsClozeRevealed(false); setError(""); setIsEditingCloze(false); setClozeEditText("");
 
     if (kind === "conceptual") {
       const cached = getCachedStudyConceptQuestions(subtopicId);
@@ -123,7 +125,50 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
     setCurrentIndex(0);
     setResult(null);
     setIsClozeRevealed(false);
+    setIsEditingCloze(false);
     onProgressChange({ total: difficulty === "difficult" ? difficultCount : easyCount, answered: 0 });
+  }
+
+  async function beginClozeEditing() {
+    if (!current || !("isDifficult" in current) || isSubmitting) return;
+    try {
+      setIsSubmitting(true);
+      setError("");
+      const editable = await getClozeQuestion(current.id);
+      setClozeEditText(editable.textWithAnswers);
+      setIsEditingCloze(true);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível carregar a questão para edição.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function saveClozeEditing() {
+    if (!current || !("isDifficult" in current) || isSubmitting) return;
+    try {
+      setIsSubmitting(true);
+      setError("");
+      const updated = await updateClozeQuestion(current.id, {
+        subtopicId: current.subtopicId,
+        textWithAnswers: clozeEditText,
+        isDifficult: current.isDifficult,
+      });
+      const answers = Array.from(updated.textWithAnswers.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g), (match) => match[1]!.trim());
+      setQuestions((items) => items.map((item) => item.id === current.id ? {
+        ...item,
+        text: updated.textWithAnswers.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, "__________"),
+        answer: updated.textWithAnswers.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (_match, gap: string) => gap.trim()),
+        answers,
+        gapCount: answers.length,
+      } : item));
+      setIsEditingCloze(false);
+      setClozeEditText("");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível salvar a correção.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function moveCurrentCloze() {
@@ -204,11 +249,16 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
       {difficultyTabs}
       <header>
         <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
+        {isCloze && !isEditingCloze && <button type="button" className="cloze-inline-edit-trigger" disabled={isSubmitting} onClick={() => void beginClozeEditing()}><Pencil size={14} aria-hidden="true" />Editar</button>}
       </header>
-      <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}><span>{prompt}</span></p>
+      {isEditingCloze ? <div className="cloze-inline-editor">
+        <label><span>Corrigir texto e lacunas</span><textarea value={clozeEditText} onChange={(event) => setClozeEditText(event.target.value)} rows={7} disabled={isSubmitting} autoFocus /></label>
+        <small>Mantenha cada resposta entre duas chaves: {"{{resposta}}"}.</small>
+        <div><button type="button" className="cloze-inline-save" disabled={isSubmitting || !clozeEditText.trim()} onClick={() => void saveClozeEditing()}><Save size={15} aria-hidden="true" />{isSubmitting ? "Salvando..." : "Salvar correção"}</button><button type="button" className="cloze-inline-cancel" disabled={isSubmitting} onClick={() => { setIsEditingCloze(false); setClozeEditText(""); setError(""); }}><X size={15} aria-hidden="true" />Cancelar</button></div>
+      </div> : <p className={`real-question-text ${isCloze && isClozeRevealed ? "authored-cloze-revealed" : ""}`}><span>{prompt}</span></p>}
       {error && <div className="form-message form-error">{error}</div>}
       {result && !isCloze && <div className="authored-answer-key"><span>Gabarito</span><p>{result.answer}</p></div>}
-      <footer>
+      {!isEditingCloze && <footer>
         {result || isClozeRevealed ? (
           <div className="authored-completed-actions">
             {isCloze && <button type="button" className="cloze-move-button" disabled={isSubmitting} onClick={() => void moveCurrentCloze()}><ArrowLeftRight size={15} aria-hidden="true" />Mover para {current.isDifficult ? "fáceis" : "difíceis"}</button>}
@@ -219,7 +269,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
             <Eye size={18} aria-hidden="true" />
           </button>
         )}
-      </footer>
+      </footer>}
     </section>
   );
 }

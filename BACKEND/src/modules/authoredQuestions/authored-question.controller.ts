@@ -5,6 +5,7 @@ import {
   revealConceptAnswer, updateClozeQuestion, updateConceptQuestion,
   previewClozeImport, importClozeQuestions,
   changeClozeDifficulty,
+  getClozeQuestionForEditing,
 } from "./authored-question.service.js";
 
 function positiveInteger(value: unknown) {
@@ -86,6 +87,12 @@ export async function revealStudyConceptQuestion(request: Request, response: Res
 
 export async function getClozeQuestions(_request: Request, response: Response) {
   response.json(await listClozeQuestions());
+}
+
+export async function getClozeQuestion(request: Request, response: Response) {
+  const id = positiveInteger(request.params.questionId);
+  if (!id) return sendInvalid(response);
+  response.json(await getClozeQuestionForEditing(id));
 }
 
 export async function postClozeQuestion(request: Request, response: Response) {

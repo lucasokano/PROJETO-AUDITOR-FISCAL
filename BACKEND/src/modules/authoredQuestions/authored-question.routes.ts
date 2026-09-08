@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  getClozeQuestions, getConceptQuestions, getStudyClozeQuestions, getStudyConceptQuestions,
+  getClozeQuestion, getClozeQuestions, getConceptQuestions, getStudyClozeQuestions, getStudyConceptQuestions,
   postClozeQuestion, postConceptQuestion, putClozeQuestion, putConceptQuestion,
   removeClozeQuestion, removeConceptQuestion, revealStudyConceptQuestion,
   previewClozeQuestionsImport, postClozeQuestionsImport,
@@ -20,6 +20,7 @@ authoredQuestionRoutes.get("/cloze", getClozeQuestions);
 authoredQuestionRoutes.post("/cloze", postClozeQuestion);
 authoredQuestionRoutes.post("/cloze/import/preview", previewClozeQuestionsImport);
 authoredQuestionRoutes.post("/cloze/import", postClozeQuestionsImport);
+authoredQuestionRoutes.get("/cloze/:questionId", getClozeQuestion);
 authoredQuestionRoutes.put("/cloze/:questionId", putClozeQuestion);
 authoredQuestionRoutes.patch("/cloze/:questionId/difficulty", patchClozeDifficulty);
 authoredQuestionRoutes.delete("/cloze/:questionId", removeClozeQuestion);

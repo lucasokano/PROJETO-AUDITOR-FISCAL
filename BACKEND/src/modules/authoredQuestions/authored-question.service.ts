@@ -180,6 +180,21 @@ export function listClozeQuestions() {
   });
 }
 
+export async function getClozeQuestionForEditing(id: number) {
+  const question = await prisma.clozeQuestion.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      subtopicId: true,
+      textWithAnswers: true,
+      isDifficult: true,
+      isActive: true,
+    },
+  });
+  if (!question) throw new AppError("Questão de lacuna não encontrada.", 404);
+  return question;
+}
+
 export async function updateClozeQuestion(id: number, input: { subtopicId: number; textWithAnswers: string; isActive?: boolean; isDifficult?: boolean }) {
   await ensureSubtopic(input.subtopicId);
   return prisma.clozeQuestion.update({ where: { id }, data: {

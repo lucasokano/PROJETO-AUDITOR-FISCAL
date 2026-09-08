@@ -16,6 +16,7 @@ interface AuthoredQuestionContext {
 
 export interface ConceptQuestion extends AuthoredQuestionContext { question: string; answer: string; }
 export interface ClozeQuestion extends AuthoredQuestionContext { textWithAnswers: string; isDifficult: boolean; }
+export interface EditableClozeQuestion { id: number; subtopicId: number; textWithAnswers: string; isDifficult: boolean; isActive: boolean; }
 
 export interface ClozeImportPreviewItem {
   line: number; topic: string; subtopic: string; text: string; answers: string[];

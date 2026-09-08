@@ -1,6 +1,6 @@
 import type {
   ClozeQuestionInput, ConceptAnswerResult, ConceptQuestionInput,
-  StudyConceptQuestion, ConceptQuestion, ClozeQuestion, ClozeImportInput, ClozeImportPreviewItem, ClozeImportResult,
+  StudyConceptQuestion, ConceptQuestion, ClozeQuestion, EditableClozeQuestion, ClozeImportInput, ClozeImportPreviewItem, ClozeImportResult,
 } from "../types/authoredQuestion";
 import { createKeyedCache } from "./questionCache";
 import { invalidateOfflineClozeSubtopic, updateOfflineClozeDifficulty } from "./offlineDb";
@@ -52,6 +52,7 @@ export const deleteConceptQuestion = async (id: number, subtopicId: number) => {
   await request<void>(`/conceptual/${id}`, { method: "DELETE" }); conceptStudyCache.invalidate(subtopicId); invalidateSubtopicQuestionTypes(subtopicId);
 };
 export const getClozeQuestions = () => request<ClozeQuestion[]>("/cloze");
+export const getClozeQuestion = (id: number) => request<EditableClozeQuestion>(`/cloze/${id}`);
 export const updateClozeQuestion = async (id: number, input: ClozeQuestionInput & { isActive?: boolean }) => {
   const updated = await request<ClozeQuestion>(`/cloze/${id}`, { method: "PUT", body: JSON.stringify(input) });
   await invalidateOfflineClozeSubtopic(input.subtopicId); invalidateSubtopicQuestionTypes(); return updated;
