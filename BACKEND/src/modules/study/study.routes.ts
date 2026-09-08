@@ -23,6 +23,7 @@ import {
   getDashboard,
   reorderStudyTopics,
   reorderStudySubtopics,
+  listSubtopicQuestionTypes,
 } from "./study.controller.js";
 
 export const studyRoutes = Router();
@@ -30,6 +31,11 @@ export const studyRoutes = Router();
 studyRoutes.get(
   "/structure",
   listStudyStructure,
+);
+
+studyRoutes.get(
+  "/subtopics/:subtopicId/question-types",
+  listSubtopicQuestionTypes,
 );
 
 studyRoutes.get(

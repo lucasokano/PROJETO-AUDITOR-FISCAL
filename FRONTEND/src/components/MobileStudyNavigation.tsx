@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStudy } from "../contexts/StudyContext";
 import { useAuth } from "../contexts/AuthContext";
+import { getSubtopicQuestionTypes, type SubtopicQuestionTypes } from "../services/studyApi";
 
 interface MobileStudyNavigationProps { onClose: () => void; }
 
@@ -17,9 +18,21 @@ export function MobileStudyNavigation({ onClose }: MobileStudyNavigationProps) {
   const subtopicSlug = parts[4] === "subtopico" ? parts[5] ?? "" : "";
   const discipline = disciplines.find((item) => item.slug === disciplineSlug);
   const topic = discipline?.topics.find((item) => item.slug === topicSlug);
+  const subtopic = topic?.subtopics.find((item) => item.slug === subtopicSlug);
+  const [questionTypes, setQuestionTypes] = useState<SubtopicQuestionTypes | null>(null);
   const requestedMode = new URLSearchParams(location.search).get("exercise") ?? "true-false";
   const exerciseMode = ["exam", "conceptual", "cloze"].includes(requestedMode) ? requestedMode : "true-false";
   const clozeDifficulty = new URLSearchParams(location.search).get("difficulty") === "easy" ? "easy" : "difficult";
+
+  useEffect(() => {
+    setQuestionTypes(null);
+    if (!subtopic) return;
+    let cancelled = false;
+    void getSubtopicQuestionTypes(subtopic.id)
+      .then((result) => { if (!cancelled) setQuestionTypes(result); })
+      .catch(() => { if (!cancelled) setQuestionTypes({ trueFalse: 0, exam: 0, conceptual: 0, cloze: 0 }); });
+    return () => { cancelled = true; };
+  }, [subtopic]);
 
   function withExerciseMode(path: string) {
     if (exerciseMode === "true-false") return path;
@@ -71,8 +84,8 @@ export function MobileStudyNavigation({ onClose }: MobileStudyNavigationProps) {
       <label><span>Disciplina</span><select value={disciplineSlug} onChange={(event) => selectDiscipline(event.target.value)}><option value="">Selecione</option>{disciplines.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</select></label>
       <label><span>Tópico</span><select value={topicSlug} disabled={!discipline} onChange={(event) => selectTopic(event.target.value)}><option value="">Selecione</option>{discipline?.topics.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</select></label>
       <label><span>Subtópico</span><select value={subtopicSlug} disabled={!topic} onChange={(event) => selectSubtopic(event.target.value)}><option value="">Selecione</option>{topic?.subtopics.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}</select></label>
-      <label><span>Tipo de questão</span><select value={exerciseMode} disabled={!subtopicSlug} onChange={(event) => selectExerciseMode(event.target.value)}><option value="true-false">Afirmações V/F</option><option value="exam">Questões de prova</option><option value="conceptual">Conceitual</option><option value="cloze">Lacunas</option></select></label>
-      {exerciseMode === "cloze" && <label><span>Dificuldade</span><select value={clozeDifficulty} onChange={(event) => selectClozeDifficulty(event.target.value)}><option value="difficult">Difíceis</option><option value="easy">Fáceis</option></select></label>}
+      <label><span>Tipo de questão</span><select value={questionTypes ? exerciseMode : ""} disabled={!subtopic || !questionTypes} onChange={(event) => selectExerciseMode(event.target.value)}><option value="" disabled>{questionTypes ? "Nenhum tipo publicado" : "Carregando..."}</option>{(questionTypes?.trueFalse ?? 0) > 0 && <option value="true-false">Afirmações V/F</option>}{(questionTypes?.exam ?? 0) > 0 && <option value="exam">Questões de prova</option>}{(questionTypes?.conceptual ?? 0) > 0 && <option value="conceptual">Conceitual</option>}{(questionTypes?.cloze ?? 0) > 0 && <option value="cloze">Lacunas</option>}</select></label>
+      {exerciseMode === "cloze" && (questionTypes?.cloze ?? 0) > 0 && <label><span>Dificuldade</span><select value={clozeDifficulty} onChange={(event) => selectClozeDifficulty(event.target.value)}><option value="difficult">Difíceis</option><option value="easy">Fáceis</option></select></label>}
       <button type="button" className="mobile-navigation-logout" onClick={() => void logout().then(() => navigate("/login", { replace: true }))}>Sair</button>
     </aside>
   );

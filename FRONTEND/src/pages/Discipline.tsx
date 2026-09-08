@@ -24,8 +24,10 @@ import { getStudyConceptQuestions } from "../services/authoredQuestionApi";
 import { getStudyExamQuestions } from "../services/examQuestionApi";
 import {
   getSubtopicStatements,
+  getSubtopicQuestionTypes,
   registerAnswer,
 } from "../services/studyApi";
+import type { SubtopicQuestionTypes } from "../services/studyApi";
 import type { PublicStatement } from "../types/study";
 import type { AuthoredQuestionKind } from "../types/authoredQuestion";
 import {
@@ -103,6 +105,9 @@ export function Discipline() {
   const [exerciseGroups, setExerciseGroups] =
     useState<ExerciseGroup[]>([]);
 
+  const [questionTypes, setQuestionTypes] =
+    useState<SubtopicQuestionTypes | null>(null);
+
   const [areExerciseGroupsLoading, setAreExerciseGroupsLoading] =
     useState(false);
 
@@ -147,6 +152,7 @@ useEffect(() => {
   setBatchResult(null);
   setRealQuestionProgress({ total: 0, answered: 0, correct: 0 });
   setAuthoredProgress({ total: 0, answered: 0 });
+  setQuestionTypes(null);
 
   if (!subtopic) {
     setIsLoading(false);
@@ -193,24 +199,58 @@ useEffect(() => {
 
   useEffect(() => {
     if (!subtopic) return;
+    let cancelled = false;
+    void getSubtopicQuestionTypes(subtopic.id)
+      .then((result) => { if (!cancelled) setQuestionTypes(result); })
+      .catch((requestError: Error) => {
+        if (!cancelled) setError(requestError.message);
+      });
+    return () => { cancelled = true; };
+  }, [subtopic]);
+
+  useEffect(() => {
+    if (!subtopic || !questionTypes || areExerciseGroupsLoading) return;
     if (requestedExerciseMode === "structured") {
       const type = Object.values(ExerciseType).find((value) => value === requestedStructuredType);
       const group = exerciseGroups.find((item) => item.id === requestedStructuredGroupId);
-      setIsRealMultipleChoiceActive(false);
-      setActiveAuthoredType(null);
-      setActiveExercise(type && group?.eligibleTypes.includes(type) ? { type, groupId: group.id } : null);
-      return;
+      if (type && group?.eligibleTypes.includes(type)) {
+        setIsRealMultipleChoiceActive(false);
+        setActiveAuthoredType(null);
+        setActiveExercise({ type, groupId: group.id });
+        return;
+      }
+    } else {
+      const available = requestedExerciseMode === "true-false" ? questionTypes.trueFalse > 0
+        : requestedExerciseMode === "exam" ? questionTypes.exam > 0
+        : requestedExerciseMode === "conceptual" ? questionTypes.conceptual > 0
+        : requestedExerciseMode === "cloze" ? questionTypes.cloze > 0
+        : false;
+      if (available) {
+        setActiveExercise(null);
+        setBatchResult(null);
+        setActiveAuthoredType(requestedExerciseMode === "conceptual" || requestedExerciseMode === "cloze" ? requestedExerciseMode : null);
+        setIsRealMultipleChoiceActive(requestedExerciseMode === "exam");
+        setAuthoredProgress({ total: 0, answered: 0 });
+        return;
+      }
     }
+
+    const fallbackGroup = exerciseGroups.find((group) => group.eligibleTypes.length > 0);
     setActiveExercise(null);
     setBatchResult(null);
-    setActiveAuthoredType(
-      requestedExerciseMode === "conceptual" || requestedExerciseMode === "cloze"
-        ? requestedExerciseMode
-        : null,
-    );
-    setIsRealMultipleChoiceActive(requestedExerciseMode === "exam");
+    setActiveAuthoredType(null);
+    setIsRealMultipleChoiceActive(false);
     setAuthoredProgress({ total: 0, answered: 0 });
-  }, [exerciseGroups, requestedExerciseMode, requestedStructuredGroupId, requestedStructuredType, subtopic]);
+    if (questionTypes.trueFalse > 0) setSearchParams({}, { replace: true });
+    else if (questionTypes.exam > 0) { setIsRealMultipleChoiceActive(true); setSearchParams({ exercise: "exam" }, { replace: true }); }
+    else if (questionTypes.conceptual > 0) { setActiveAuthoredType("conceptual"); setSearchParams({ exercise: "conceptual" }, { replace: true }); }
+    else if (questionTypes.cloze > 0) { setActiveAuthoredType("cloze"); setSearchParams({ exercise: "cloze", difficulty: "difficult" }, { replace: true }); }
+    else if (fallbackGroup) {
+      const type = fallbackGroup.eligibleTypes[0]!;
+      setActiveExercise({ type, groupId: fallbackGroup.id });
+      setSearchParams({ exercise: "structured", type, groupId: String(fallbackGroup.id) }, { replace: true });
+    } else if (requestedExerciseMode !== "true-false") setSearchParams({}, { replace: true });
+  }, [areExerciseGroupsLoading, exerciseGroups, questionTypes, requestedExerciseMode, requestedStructuredGroupId, requestedStructuredType, setSearchParams, subtopic]);
 
   useEffect(() => {
     if (!subtopic) {
@@ -442,7 +482,7 @@ useEffect(() => {
 
       {subtopic && (
         <nav className="discipline-exercise-tabs" aria-label="Tipos de exercício do subtópico">
-          <button
+          {(questionTypes?.trueFalse ?? 0) > 0 && <button
             type="button"
             className={`discipline-exercise-tab ${activeExercise === null && !isRealMultipleChoiceActive && !activeAuthoredType ? "discipline-exercise-tab-active" : ""}`}
             onClick={() => {
@@ -453,9 +493,9 @@ useEffect(() => {
             }}
           >
             Afirmações V/F
-          </button>
+          </button>}
 
-          <button
+          {(questionTypes?.exam ?? 0) > 0 && <button
             type="button"
             className={`discipline-exercise-tab ${isRealMultipleChoiceActive ? "discipline-exercise-tab-active" : ""}`}
             onClick={() => {
@@ -466,15 +506,15 @@ useEffect(() => {
             }}
           >
             Questões de prova
-          </button>
+          </button>}
 
-          <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "conceptual" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("conceptual"); setSearchParams({ exercise: "conceptual" }, { replace: true }); }}>
+          {(questionTypes?.conceptual ?? 0) > 0 && <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "conceptual" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("conceptual"); setSearchParams({ exercise: "conceptual" }, { replace: true }); }}>
             Conceitual
-          </button>
+          </button>}
 
-          <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "cloze" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("cloze"); setSearchParams({ exercise: "cloze", difficulty: "difficult" }, { replace: true }); }}>
+          {(questionTypes?.cloze ?? 0) > 0 && <button type="button" className={`discipline-exercise-tab ${activeAuthoredType === "cloze" ? "discipline-exercise-tab-active" : ""}`} onClick={() => { setActiveExercise(null); setIsRealMultipleChoiceActive(false); setActiveAuthoredType("cloze"); setSearchParams({ exercise: "cloze", difficulty: "difficult" }, { replace: true }); }}>
             Lacunas
-          </button>
+          </button>}
 
           {structuredExerciseTabs.map(({ type, groupId }) => (
             <button
@@ -493,7 +533,7 @@ useEffect(() => {
             </button>
           ))}
 
-          {areExerciseGroupsLoading && <span className="discipline-tabs-loading">Carregando...</span>}
+          {(areExerciseGroupsLoading || !questionTypes) && <span className="discipline-tabs-loading">Carregando...</span>}
         </nav>
       )}
 

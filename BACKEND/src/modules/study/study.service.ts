@@ -33,8 +33,15 @@ import {
   findDueReviewStatements,
   findDisciplineProgress,
   countDueReviewStatements,
+  countActiveQuestionTypes,
   findReviewForecast,
 } from "./study.repository.js";
+
+export async function getSubtopicQuestionTypes(subtopicId: number) {
+  const subtopic = await findSubtopicById(subtopicId);
+  if (!subtopic) throw new AppError("Subtópico não encontrado.", 404);
+  return countActiveQuestionTypes(subtopicId);
+}
 
 interface BulkStatementInput {
   text: string;

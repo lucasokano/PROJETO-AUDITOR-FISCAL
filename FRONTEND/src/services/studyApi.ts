@@ -24,6 +24,7 @@ import {
   peekStructure,
   recordStatementAnswer,
 } from "./studyCache";
+import { createKeyedCache } from "./questionCache";
 
 export { clearStudyCache } from "./studyCache";
 export const getCachedDashboard = peekDashboard;
@@ -63,6 +64,17 @@ interface StatementResponse {
 const API_URL =
   import.meta.env.VITE_API_URL ??
   "http://localhost:3001/api";
+
+export interface SubtopicQuestionTypes {
+  trueFalse: number;
+  exam: number;
+  conceptual: number;
+  cloze: number;
+}
+
+const questionTypesCache = createKeyedCache<SubtopicQuestionTypes>();
+
+export const invalidateSubtopicQuestionTypes = (subtopicId?: number) => questionTypesCache.invalidate(subtopicId);
 
 async function request<T>(
   path: string,
@@ -127,6 +139,10 @@ export function getStatementsBySubtopic(
 export const getSubtopicStatements =
   getStatementsBySubtopic;
 
+export function getSubtopicQuestionTypes(subtopicId: number) {
+  return questionTypesCache.load(subtopicId, () => request<SubtopicQuestionTypes>(`/study/subtopics/${subtopicId}/question-types`));
+}
+
 export async function createStatement(
   input: CreateStatementInput,
 ) {
@@ -139,6 +155,7 @@ export async function createStatement(
   );
   invalidateDashboard();
   invalidateReviews();
+  invalidateSubtopicQuestionTypes(input.subtopicId);
   return result;
 }
 
@@ -154,6 +171,7 @@ export async function createStatementsBulk(
   );
   invalidateDashboard();
   invalidateReviews();
+  invalidateSubtopicQuestionTypes(input.subtopicId);
   return result;
 }
 
@@ -170,6 +188,7 @@ export async function updateStatement(
   );
   invalidateDashboard();
   invalidateReviews();
+  invalidateSubtopicQuestionTypes();
   return result;
 }
 
@@ -184,6 +203,7 @@ export async function deleteStatement(
   );
   invalidateDashboard();
   invalidateReviews();
+  invalidateSubtopicQuestionTypes();
   return result;
 }
 

@@ -91,6 +91,17 @@ export function findStatementsBySubtopicId(
   });
 }
 
+export async function countActiveQuestionTypes(subtopicId: number) {
+  const [trueFalse, exam, conceptual, cloze] = await prisma.$transaction([
+    prisma.statement.count({ where: { subtopicId, isActive: true } }),
+    prisma.examQuestion.count({ where: { subtopicId, isActive: true } }),
+    prisma.conceptQuestion.count({ where: { subtopicId, isActive: true } }),
+    prisma.clozeQuestion.count({ where: { subtopicId, isActive: true } }),
+  ]);
+
+  return { trueFalse, exam, conceptual, cloze };
+}
+
 export function findSubtopicById(
   subtopicId: number,
 ) {

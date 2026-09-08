@@ -26,6 +26,7 @@ import {
   getStudyDashboard,
   reorderDisciplineTopics,
   reorderTopicSubtopics,
+  getSubtopicQuestionTypes,
 } from "./study.service.js";
 
 interface IdRouteParams {
@@ -61,6 +62,12 @@ interface NameBody {
 }
 
 interface OrderBody { ids?: unknown; }
+
+export async function listSubtopicQuestionTypes(request: Request<IdRouteParams>, response: Response) {
+  const subtopicId = parsePositiveInteger(request.params.subtopicId);
+  if (!subtopicId) { response.status(400).json({ message: "O ID do subtópico é inválido." }); return; }
+  response.json(await getSubtopicQuestionTypes(subtopicId));
+}
 
 function parseOrderIds(value: unknown) {
   return Array.isArray(value) && value.every((id) => Number.isInteger(id) && id > 0)

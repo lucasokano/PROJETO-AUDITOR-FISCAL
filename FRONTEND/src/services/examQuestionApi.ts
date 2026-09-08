@@ -1,5 +1,6 @@
 import type { Exam, ExamBoard, ExamQuestion, ExamQuestionInput, StudyExamQuestion, StudyExamQuestionResult } from "../types/examQuestion";
 import { createKeyedCache } from "./questionCache";
+import { invalidateSubtopicQuestionTypes } from "./studyApi";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api";
 const studyQuestionCache = createKeyedCache<StudyExamQuestion[]>();
@@ -26,15 +27,17 @@ export const getExamQuestions = () => request<ExamQuestion[]>("/questions");
 export const createExamQuestion = async (input: ExamQuestionInput) => {
   const created = await request<ExamQuestion>("/questions", { method: "POST", body: JSON.stringify(input) });
   studyQuestionCache.invalidate(input.subtopicId);
+  invalidateSubtopicQuestionTypes(input.subtopicId);
   return created;
 };
 export const updateExamQuestion = async (id: number, input: ExamQuestionInput & { isActive?: boolean }) => {
   const updated = await request<ExamQuestion>(`/questions/${id}`, { method: "PUT", body: JSON.stringify(input) });
-  studyQuestionCache.invalidate(); return updated;
+  studyQuestionCache.invalidate(); invalidateSubtopicQuestionTypes(); return updated;
 };
 export const deleteExamQuestion = async (id: number) => {
   await request<void>(`/questions/${id}`, { method: "DELETE" });
   studyQuestionCache.invalidate();
+  invalidateSubtopicQuestionTypes();
 };
 export const getCachedStudyExamQuestions = (subtopicId: number) => studyQuestionCache.peek(subtopicId);
 export const getStudyExamQuestions = (subtopicId: number) => studyQuestionCache.load(subtopicId, () => request<StudyExamQuestion[]>(`/study?subtopicId=${subtopicId}`));
