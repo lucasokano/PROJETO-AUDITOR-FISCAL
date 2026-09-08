@@ -7,9 +7,10 @@ export interface RealQuestionProgress { total: number; answered: number; correct
 interface Props {
   subtopicId: number;
   onProgressChange: (progress: RealQuestionProgress) => void;
+  onComplete?: () => void;
 }
 
-export function RealMultipleChoiceSession({ subtopicId, onProgressChange }: Props) {
+export function RealMultipleChoiceSession({ subtopicId, onProgressChange, onComplete }: Props) {
   const cachedQuestions = getCachedStudyExamQuestions(subtopicId);
   const [questions, setQuestions] = useState<StudyExamQuestion[]>(cachedQuestions ?? []);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,7 +46,10 @@ export function RealMultipleChoiceSession({ subtopicId, onProgressChange }: Prop
     finally { setIsSubmitting(false); }
   }
 
-  function next() { setCurrentIndex((index) => index + 1); setSelectedOptionId(null); setResult(null); }
+  function next() {
+    if (currentIndex + 1 >= questions.length && onComplete) { onComplete(); return; }
+    setCurrentIndex((index) => index + 1); setSelectedOptionId(null); setResult(null);
+  }
   function restart() { setCurrentIndex(0); setSelectedOptionId(null); setResult(null); setResults([]); onProgressChange({ total: questions.length, answered: 0, correct: 0 }); }
 
   if (isLoading) return <div className="real-question-state">Carregando questões...</div>;

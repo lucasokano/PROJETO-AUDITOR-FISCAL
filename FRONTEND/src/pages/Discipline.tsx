@@ -12,7 +12,7 @@ import {
   ListChecks,
 } from "lucide-react";
 
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { StatementCard } from "../components/StatementCard";
 import { EmbeddedExerciseSession } from "../components/exercises/EmbeddedExerciseSession";
@@ -49,7 +49,16 @@ interface AnswerResult {
   isCorrect: boolean;
 }
 
+type FiniteExerciseMode = "true-false" | "exam" | "conceptual" | "cloze";
+
+interface NextContent {
+  kind: "subtopic" | "topic";
+  name: string;
+  path: string;
+}
+
 export function Discipline() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedExerciseMode = searchParams.get("exercise") ?? "true-false";
   const requestedClozeDifficulty = searchParams.get("difficulty") === "easy" ? "easy" : "difficult";
@@ -132,6 +141,9 @@ export function Discipline() {
   const handleAuthoredProgress = useCallback((progress: { total: number; answered: number }) => {
     setAuthoredProgress(progress);
   }, []);
+  const [completedExerciseMode, setCompletedExerciseMode] = useState<FiniteExerciseMode | null>(null);
+  const [nextContent, setNextContent] = useState<NextContent | null>(null);
+  const [isFindingNextContent, setIsFindingNextContent] = useState(false);
 
   const answerInFlightRef = useRef(false);
   const activeSubtopicIdRef = useRef<
@@ -196,6 +208,11 @@ useEffect(() => {
     cancelled = true;
   };
 }, [subtopic]);
+
+  useEffect(() => {
+    setCompletedExerciseMode(null);
+    setNextContent(null);
+  }, [requestedClozeDifficulty, requestedExerciseMode, requestedStructuredGroupId, requestedStructuredType, subtopic?.id]);
 
   useEffect(() => {
     if (!subtopic) return;
@@ -315,6 +332,57 @@ useEffect(() => {
 
   const total = statements.length;
   const answered = answers.length;
+  const completedMode: FiniteExerciseMode | null = completedExerciseMode ?? (
+    !activeExercise && !isRealMultipleChoiceActive && !activeAuthoredType && !isLoading && !error && total > 0 && unansweredStatements.length === 0
+      ? "true-false"
+      : null
+  );
+
+  useEffect(() => {
+    if (!completedMode || !discipline || !topic || !subtopic) {
+      setNextContent(null);
+      setIsFindingNextContent(false);
+      return;
+    }
+
+    const topicIndex = discipline.topics.findIndex((item) => item.id === topic.id);
+    const subtopicIndex = topic.subtopics.findIndex((item) => item.id === subtopic.id);
+    const candidates = discipline.topics.slice(topicIndex).flatMap((candidateTopic, relativeTopicIndex) => {
+      const start = relativeTopicIndex === 0 ? subtopicIndex + 1 : 0;
+      return candidateTopic.subtopics.slice(start).map((candidateSubtopic) => ({ topic: candidateTopic, subtopic: candidateSubtopic }));
+    });
+    let cancelled = false;
+    setNextContent(null);
+    setIsFindingNextContent(true);
+
+    void (async () => {
+      for (const candidate of candidates) {
+        const availability = await getSubtopicQuestionTypes(candidate.subtopic.id);
+        const isAvailable = completedMode === "true-false" ? availability.trueFalse > 0
+          : completedMode === "exam" ? availability.exam > 0
+          : completedMode === "conceptual" ? availability.conceptual > 0
+          : availability.cloze > 0;
+        if (!isAvailable) continue;
+
+        const params = completedMode === "true-false"
+          ? ""
+          : `?${new URLSearchParams({
+              exercise: completedMode,
+              ...(completedMode === "cloze" ? { difficulty: requestedClozeDifficulty } : {}),
+            })}`;
+        if (!cancelled) {
+          setNextContent({
+            kind: candidate.topic.id === topic.id ? "subtopic" : "topic",
+            name: candidate.topic.id === topic.id ? candidate.subtopic.name : candidate.topic.name,
+            path: `/disciplina/${discipline.slug}/topico/${candidate.topic.slug}/subtopico/${candidate.subtopic.slug}${params}`,
+          });
+        }
+        return;
+      }
+    })().catch(() => undefined).finally(() => { if (!cancelled) setIsFindingNextContent(false); });
+
+    return () => { cancelled = true; };
+  }, [completedMode, discipline, requestedClozeDifficulty, subtopic, topic]);
 
   const correct = answers.filter(
     (answer) => answer.isCorrect,
@@ -433,6 +501,28 @@ useEffect(() => {
     setAnswerError(null);
   }
 
+  function restartCompletedType() {
+    if (completedMode === "true-false") restartSubtopic();
+    else setCompletedExerciseMode(null);
+  }
+
+  const completionPanel = completedMode && (
+    <div className="statements-finished type-session-finished">
+      <h3>{nextContent?.kind === "topic" ? "Tópico concluído" : nextContent ? "Subtópico concluído" : isFindingNextContent ? "Subtópico concluído" : "Conteúdo concluído"}</h3>
+      <p>{isFindingNextContent
+        ? "Buscando o próximo conteúdo deste mesmo tipo..."
+        : nextContent?.kind === "subtopic"
+          ? `Deseja continuar este tipo de questão no subtópico “${nextContent.name}”?`
+          : nextContent?.kind === "topic"
+            ? `Você terminou este tipo de questão no tópico atual. Deseja passar para “${nextContent.name}”?`
+            : "Não há outro subtópico com questões deste tipo nesta disciplina."}</p>
+      <div className="statements-finished-actions">
+        {nextContent && <button type="button" className="statements-continue-button" onClick={() => navigate(nextContent.path)}>{nextContent.kind === "subtopic" ? "Próximo subtópico" : "Próximo tópico"}</button>}
+        <button type="button" className="restart-button statements-finished-restart" onClick={restartCompletedType}>Responder novamente</button>
+      </div>
+    </div>
+  );
+
   if (isStructureLoading && !discipline) {
     return (
       <section className="page" aria-busy="true">
@@ -537,8 +627,8 @@ useEffect(() => {
         </nav>
       )}
 
-      {activeAuthoredType && subtopic ? (
-        <AuthoredUngradedSession key={`${subtopic.id}-${activeAuthoredType}-${requestedClozeDifficulty}`} kind={activeAuthoredType} subtopicId={subtopic.id} initialClozeDifficulty={requestedClozeDifficulty} onProgressChange={handleAuthoredProgress} />
+      {completionPanel ? completionPanel : activeAuthoredType && subtopic ? (
+        <AuthoredUngradedSession key={`${subtopic.id}-${activeAuthoredType}-${requestedClozeDifficulty}`} kind={activeAuthoredType} subtopicId={subtopic.id} initialClozeDifficulty={requestedClozeDifficulty} onProgressChange={handleAuthoredProgress} onComplete={() => setCompletedExerciseMode(activeAuthoredType)} />
       ) : activeExercise && subtopic ? (
         <EmbeddedExerciseSession
           subtopicId={subtopic.id}
@@ -550,7 +640,7 @@ useEffect(() => {
           }
         />
       ) : isRealMultipleChoiceActive ? (
-        subtopic && <RealMultipleChoiceSession subtopicId={subtopic.id} onProgressChange={handleRealQuestionProgress} />
+        subtopic && <RealMultipleChoiceSession subtopicId={subtopic.id} onProgressChange={handleRealQuestionProgress} onComplete={() => setCompletedExerciseMode("exam")} />
       ) : <div className="discipline-content">
         <div className="statements-area">
           <div className="statements-table">
@@ -635,32 +725,6 @@ useEffect(() => {
                   ),
                 )}
 
-              {!isLoading &&
-                !error &&
-                total > 0 &&
-                unansweredStatements.length ===
-                  0 && (
-                  <div className="statements-finished">
-                    <h3>
-                      Subtópico concluído
-                    </h3>
-
-                    <p>
-                      Você respondeu todas as
-                      afirmações deste subtópico.
-                    </p>
-
-                    <button
-                      type="button"
-                      className="restart-button"
-                      onClick={
-                        restartSubtopic
-                      }
-                    >
-                      Responder novamente
-                    </button>
-                  </div>
-                )}
             </div>
           </div>
         </div>

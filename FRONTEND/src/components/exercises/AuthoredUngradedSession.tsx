@@ -14,6 +14,7 @@ interface Props {
   subtopicId: number;
   initialClozeDifficulty?: "easy" | "difficult";
   onProgressChange: (progress: { total: number; answered: number }) => void;
+  onComplete?: () => void;
 }
 
 function highlightedClozeAnswer(answer: string, gaps: string[]): ReactNode[] {
@@ -32,7 +33,7 @@ function highlightedClozeAnswer(answer: string, gaps: string[]): ReactNode[] {
   return parts;
 }
 
-export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficulty = "difficult", onProgressChange }: Props) {
+export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficulty = "difficult", onProgressChange, onComplete }: Props) {
   const cachedQuestions = kind === "conceptual" ? getCachedStudyConceptQuestions(subtopicId) : null;
   const [questions, setQuestions] = useState<Array<StudyConceptQuestion | StudyClozeQuestion>>(cachedQuestions ?? []);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -171,6 +172,10 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
     if (kind === "cloze" && currentIndex + 1 >= visibleQuestions.length && visibleQuestions.length < activeTotal) {
       const loaded = await loadMoreClozeQuestions();
       if (!loaded) return;
+    }
+    if (currentIndex + 1 >= (kind === "cloze" ? activeTotal : visibleQuestions.length) && onComplete) {
+      onComplete();
+      return;
     }
     setCurrentIndex((index) => index + 1); setResult(null); setIsClozeRevealed(false);
   }
