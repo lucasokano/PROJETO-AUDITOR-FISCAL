@@ -249,7 +249,7 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
       {difficultyTabs}
       <header>
         <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
-        {isCloze && !isEditingCloze && <button type="button" className="cloze-inline-edit-trigger" disabled={isSubmitting} onClick={() => void beginClozeEditing()}><Pencil size={14} aria-hidden="true" />Editar</button>}
+        {isCloze && !isEditingCloze && <button type="button" className="cloze-inline-edit-trigger" aria-label="Editar questão de lacuna" title="Editar questão" disabled={isSubmitting} onClick={() => void beginClozeEditing()}><Pencil size={14} aria-hidden="true" />Editar</button>}
       </header>
       {isEditingCloze ? <div className="cloze-inline-editor">
         <label><span>Corrigir texto e lacunas</span><textarea value={clozeEditText} onChange={(event) => setClozeEditText(event.target.value)} rows={7} disabled={isSubmitting} autoFocus /></label>

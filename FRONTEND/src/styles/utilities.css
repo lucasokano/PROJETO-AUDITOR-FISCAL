@@ -2487,8 +2487,9 @@ select option[value=""] { color: #7f8b9b; }
 
   .cloze-difficulty-tabs { grid-template-columns: repeat(2, 1fr); width: 100%; }
   .authored-ungraded-session > .cloze-difficulty-tabs { display: none; }
-  .authored-ungraded-session > header { align-items: stretch; flex-direction: column; gap: 10px; }
-  .authored-ungraded-session .cloze-inline-edit-trigger { width: 100%; min-height: 40px; }
+  .authored-ungraded-session > header { position: relative; min-height: 52px; align-items: flex-start; justify-content: center; flex-direction: column; gap: 10px; padding-right: 56px; }
+  .authored-ungraded-session .cloze-inline-edit-trigger { position: absolute; top: 50%; right: 8px; width: 36px; min-height: 36px; padding: 0; font-size: 0; transform: translateY(-50%); }
+  .authored-ungraded-session .cloze-inline-edit-trigger svg { width: 16px; height: 16px; }
   .authored-ungraded-session .cloze-inline-editor { padding: 16px; }
   .authored-ungraded-session .cloze-inline-editor > div { align-items: stretch; flex-direction: column; }
   .authored-ungraded-session .cloze-inline-editor > div > button { width: 100%; min-height: 48px; }
