@@ -616,7 +616,7 @@ useEffect(() => {
       )}
 
       {completionPanel ? completionPanel : activeAuthoredType && subtopic ? (
-        <AuthoredUngradedSession key={`${subtopic.id}-${activeAuthoredType}-${requestedClozeDifficulty}`} kind={activeAuthoredType} subtopicId={subtopic.id} initialClozeDifficulty={requestedClozeDifficulty} onProgressChange={handleAuthoredProgress} onComplete={() => setCompletedExerciseMode(activeAuthoredType)} />
+        <AuthoredUngradedSession key={`${subtopic.id}-${activeAuthoredType}-${requestedClozeDifficulty}`} kind={activeAuthoredType} subtopicId={subtopic.id} subtopicPosition={topic.subtopics.findIndex((item) => item.id === subtopic.id) + 1} subtopicCount={topic.subtopics.length} initialClozeDifficulty={requestedClozeDifficulty} onProgressChange={handleAuthoredProgress} onComplete={() => setCompletedExerciseMode(activeAuthoredType)} />
       ) : activeExercise && subtopic ? (
         <EmbeddedExerciseSession
           subtopicId={subtopic.id}

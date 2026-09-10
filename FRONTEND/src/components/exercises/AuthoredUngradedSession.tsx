@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeftRight, Eye, Pencil, Save, X } from "lucide-react";
+import "../../styles/cloze-header.css";
 import {
   changeClozeDifficulty, getCachedStudyConceptQuestions,
   getClozeQuestion, getStudyConceptQuestions, revealConceptAnswer, updateClozeQuestion,
@@ -12,6 +13,8 @@ import type {
 interface Props {
   kind: AuthoredQuestionKind;
   subtopicId: number;
+  subtopicPosition: number;
+  subtopicCount: number;
   initialClozeDifficulty?: "easy" | "difficult";
   onProgressChange: (progress: { total: number; answered: number }) => void;
   onComplete?: () => void;
@@ -33,7 +36,7 @@ function highlightedClozeAnswer(answer: string, gaps: string[]): ReactNode[] {
   return parts;
 }
 
-export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficulty = "difficult", onProgressChange, onComplete }: Props) {
+export function AuthoredUngradedSession({ kind, subtopicId, subtopicPosition, subtopicCount, initialClozeDifficulty = "difficult", onProgressChange, onComplete }: Props) {
   const cachedQuestions = kind === "conceptual" ? getCachedStudyConceptQuestions(subtopicId) : null;
   const [questions, setQuestions] = useState<Array<StudyConceptQuestion | StudyClozeQuestion>>(cachedQuestions ?? []);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -247,8 +250,17 @@ export function AuthoredUngradedSession({ kind, subtopicId, initialClozeDifficul
   return (
     <section className="real-question-session authored-ungraded-session">
       {difficultyTabs}
-      <header>
-        <span>{title} {currentIndex + 1} de {kind === "cloze" ? activeTotal : visibleQuestions.length}</span>
+      <header className={isCloze ? "cloze-session-header" : undefined}>
+        {isCloze ? <div className="cloze-header-content">
+          <div className="cloze-header-position">
+            <span className="cloze-header-question">{title} <strong>{currentIndex + 1}</strong> de {activeTotal}</span>
+            <span className="cloze-header-subtopic">Subtópico <strong>{subtopicPosition}</strong> de {subtopicCount}</span>
+          </div>
+          <div className="cloze-header-mobile-counts" aria-label="Questões por dificuldade neste subtópico">
+            <span className="cloze-header-difficult">Difíceis: <strong>{difficultCount}</strong></span>
+            <span className="cloze-header-easy">Fáceis: <strong>{easyCount}</strong></span>
+          </div>
+        </div> : <span>{title} {currentIndex + 1} de {visibleQuestions.length}</span>}
         {isCloze && !isEditingCloze && <button type="button" className="cloze-inline-edit-trigger" aria-label="Editar questão de lacuna" title="Editar questão" disabled={isSubmitting} onClick={() => void beginClozeEditing()}><Pencil size={14} aria-hidden="true" />Editar</button>}
       </header>
       {isEditingCloze ? <div className="cloze-inline-editor">
